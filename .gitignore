@@ -151,7 +151,6 @@ generated/
 # -------------------------
 # AI / ML local files
 # -------------------------
-models/
 checkpoints/
 *.bin
 *.safetensors
