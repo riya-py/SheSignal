@@ -1,5 +1,4 @@
-"""Same shape as app/risk/cache.py - kept separate/duplicated deliberately
-so Phase 4's cache and tests remain untouched."""
+"""Small in-memory cache for deterministic risk assessments."""
 import time
 from threading import Lock
 from typing import Any, Optional, Tuple
@@ -7,7 +6,7 @@ from typing import Any, Optional, Tuple
 CacheKey = Tuple[float, float, float]
 
 
-class RecommendationCache:
+class RiskCache:
     def __init__(self) -> None:
         self._store: dict[CacheKey, Tuple[Any, float]] = {}
         self._lock = Lock()
@@ -28,13 +27,18 @@ class RecommendationCache:
             self._store[key] = (value, time.time() + ttl_seconds)
 
     def reset(self) -> None:
-        """Test helper only."""
         with self._lock:
             self._store.clear()
 
 
-def build_cache_key(latitude: float, longitude: float, radius_meters: float, precision: int) -> CacheKey:
-    return (round(latitude, precision), round(longitude, precision), round(radius_meters))
+def build_cache_key(
+    latitude: float, longitude: float, radius_meters: float, precision: int
+) -> CacheKey:
+    return (
+        round(latitude, precision),
+        round(longitude, precision),
+        round(radius_meters),
+    )
 
 
-recommendation_cache = RecommendationCache()
+risk_cache = RiskCache()

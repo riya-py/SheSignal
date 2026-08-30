@@ -27,3 +27,7 @@ app.include_router(patterns.router)
 app.include_router(risk.router)
 app.include_router(route_risk.router)
 app.include_router(recommendations.router)
+
+@app.get("/")
+def root():
+    return {"message": "SheSignal API is running"}
