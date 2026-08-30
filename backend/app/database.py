@@ -17,6 +17,9 @@ from app.config import get_settings
 REPORTS_TABLE = "reports"
 PUBLIC_REPORTS_VIEW = "public_reports"
 REPORT_ANALYSIS_TABLE = "report_analysis"
+PATTERNS_TABLE = "patterns"
+RECOMPUTE_PATTERNS_RPC = "recompute_patterns"
+PATTERNS_WITHIN_RADIUS_RPC = "patterns_within_radius"
 
 
 @lru_cache
@@ -73,3 +76,45 @@ def upsert_report_analysis(payload: Dict[str, Any]) -> Dict[str, Any]:
         .execute()
     )
     return result.data[0]
+
+
+def recompute_patterns(min_reports: int, lookback_days: int, geohash_precision: int) -> int:
+    """Runs the whole geographic+temporal aggregation inside Postgres (see
+    supabase/migrations/0003_patterns.sql) so no report rows are ever pulled
+    into Python memory. Returns the number of qualifying patterns found."""
+    client = get_service_client()
+    result = client.rpc(
+        RECOMPUTE_PATTERNS_RPC,
+        {
+            "p_min_reports": min_reports,
+            "p_lookback_days": lookback_days,
+            "p_geohash_precision": geohash_precision,
+        },
+    ).execute()
+    return result.data
+
+
+def list_patterns(limit: int, offset: int) -> List[Dict[str, Any]]:
+    client = get_service_client()
+    result = (
+        client.table(PATTERNS_TABLE)
+        .select("*")
+        .order("report_count", desc=True)
+        .range(offset, offset + limit - 1)
+        .execute()
+    )
+    return result.data
+
+
+def find_nearby_patterns(
+    latitude: float, longitude: float, radius_meters: float
+) -> List[Dict[str, Any]]:
+    """Indexed spatial lookup (PostGIS ST_DWithin, see
+    supabase/migrations/0004_risk_engine_support.sql) - already-aggregated
+    pattern rows only, never individual reports."""
+    client = get_service_client()
+    result = client.rpc(
+        PATTERNS_WITHIN_RADIUS_RPC,
+        {"p_lat": latitude, "p_lng": longitude, "p_radius_meters": radius_meters},
+    ).execute()
+    return result.data

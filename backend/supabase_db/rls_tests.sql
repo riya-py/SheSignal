@@ -51,3 +51,30 @@ reset role;
 --    only the backend's service-role key writes this table.
 --    (run as user A, own report) should fail:
 --    insert into public.report_analysis (report_id, status) values ('<own-report-id>', 'completed');
+
+-- ============================================================
+-- Phase 3: patterns
+-- ============================================================
+
+-- 9. anon CAN read patterns - they're aggregate counts, safe to expose.
+set role anon;
+select * from public.patterns limit 5;         -- expected: rows (once recomputed), no reporter linkage
+reset role;
+
+-- 10. no authenticated/anon role can write to patterns or call the
+--     recompute function directly - both should fail:
+--     insert into public.patterns (geohash, time_bucket, centroid_latitude,
+--       centroid_longitude, report_count, first_report_at, last_report_at)
+--       values ('u0', 'night', 0, 0, 99, now(), now());
+--     select public.recompute_patterns();   -- permission denied for anon/authenticated
+
+-- ============================================================
+-- Phase 4: risk engine support
+-- ============================================================
+
+-- 11. patterns_within_radius is restricted the same way as
+--     recompute_patterns - only the backend's service-role key may call it
+--     directly, keeping rate limiting/radius clamping enforceable at the
+--     app layer:
+--     select * from public.patterns_within_radius(28.6, 77.2, 500);
+--     -- expected: permission denied for anon/authenticated
