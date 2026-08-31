@@ -1,9 +1,3 @@
-"""
-Centralized exception handling.
-
-Rule: clients never see stack traces, SQL errors, file paths, or other
-internal details. Full details are logged server-side only.
-"""
 import logging
 
 from fastapi import FastAPI, HTTPException, Request, status
