@@ -1,12 +1,3 @@
-"""
-All direct database access lives here, isolated behind small functions.
-
-IMPORTANT: this module uses the Supabase SERVICE ROLE key, which bypasses RLS.
-It must never run in the browser and must never be imported by frontend code.
-Column-level privacy (e.g. never returning reporter_id publicly) is enforced
-in the Pydantic response models in app/models/report.py, in addition to the
-RLS/view design in supabase/migrations — defense in depth.
-"""
 from functools import lru_cache
 from typing import Any, Dict, List
 
