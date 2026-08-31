@@ -1,6 +1,4 @@
 """
-Report endpoints.
-
 POST /reports  -> authenticated, rate-limited per user, writes a report
 GET  /reports  -> public, rate-limited per IP, reads sanitized/paginated reports
 
