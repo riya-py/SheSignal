@@ -1,14 +1,7 @@
-"""
-Structured logging setup.
-
-Rule: never log passwords, access tokens, API keys, or report content/PII.
-Only log operational metadata (route, status, duration, request id).
-"""
 import logging
 import sys
 
 from app.config import get_settings
-
 
 class SafeFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
