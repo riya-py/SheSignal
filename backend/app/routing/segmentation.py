@@ -1,9 +1,3 @@
-"""
-Splits a route polyline into a target number of segments, by cumulative
-arc-length rather than raw point count (a route can have very unevenly
-spaced vertices). Pure function - no network, no DB - so it's fully
-unit-testable on its own.
-"""
 import bisect
 from typing import Dict, List, Tuple
 
@@ -37,8 +31,6 @@ def compute_segments(coordinates: List[Coordinate], target_count: int) -> List[D
             }
         ]
 
-    # Target cumulative-distance boundaries, snapped to the nearest actual
-    # vertex (keeps segment endpoints as real points on the route).
     boundary_targets = [i * total_distance / segment_count for i in range(segment_count + 1)]
     boundary_indices = []
     for target in boundary_targets:
