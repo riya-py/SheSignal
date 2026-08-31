@@ -1,9 +1,3 @@
-"""
-Thin client for a walking-directions provider that speaks the
-OpenRouteService (ORS) directions/geojson wire format - see README for a
-free API key. Mirrors app/ai/client.py's timeout/retry shape deliberately,
-for consistency.
-"""
 import logging
 import time
 from typing import List, Optional, Tuple
