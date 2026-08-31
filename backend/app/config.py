@@ -1,7 +1,3 @@
-"""
-Centralized environment/settings loading.
-Never hardcode secrets or limits elsewhere in the codebase — read them from here.
-"""
 from functools import lru_cache
 from typing import List
 
