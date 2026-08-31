@@ -1,17 +1,8 @@
-"""
-Basic fixed-window rate limiter.
-
-NOTE: this is an in-memory dict, which is fine for a single local FastAPI
-process (dev) but will NOT share state across multiple production instances.
-Phase 8 replaces the store with Redis (or similar) without changing the
-call sites below — see SheSignal Phase 0 doc, section 9.
-"""
 import time
 from collections import defaultdict
 from threading import Lock
 
 from fastapi import HTTPException, status
-
 
 class InMemoryRateLimiter:
     def __init__(self) -> None:
