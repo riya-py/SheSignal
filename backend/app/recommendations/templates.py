@@ -1,17 +1,4 @@
-"""
-Static, hand-written recommendation text keyed by the same factor tags the
-AI extraction layer already uses (app.ai.schemas.ALLOWED_FACTORS). This is
-deliberately NOT AI-generated free text: every recommendation is a fixed
-template, so there is no way for a hallucinated statistic or alarming
-phrasing to enter the response. Language is calm and action-oriented
-("consider", "stay aware") and never claims an area is definitively unsafe,
-consistent with the product's "reported risk" framing used everywhere else.
-
-Adding a new factor here requires it to also exist in ALLOWED_FACTORS -
-see the assertion in the test suite that keeps the two in sync.
-"""
 from typing import Dict, TypedDict
-
 
 class FactorTemplate(TypedDict):
     user: str
