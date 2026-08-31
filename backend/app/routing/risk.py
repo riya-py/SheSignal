@@ -1,10 +1,3 @@
-"""
-Combines per-segment risk scores (already computed by app/risk/engine.py)
-into one overall route score/level/explanation. Pure and deterministic -
-weights toward the worst segment on purpose, since a route's danger is
-dominated by its riskiest stretch, not diluted by averaging over many safe
-ones.
-"""
 from typing import List
 
 from app.config import Settings
