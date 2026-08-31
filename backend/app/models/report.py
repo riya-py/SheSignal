@@ -17,7 +17,7 @@ from pydantic import BaseModel, Field, field_validator
 ReportCategory = Literal[
     "harassment",
     "poor_lighting",
-    "stalking",
+    "lack_of_security",
     "isolated_area",
     "unsafe_transit",
     "suspicious_activity",
@@ -67,3 +67,8 @@ class ReportListResponse(BaseModel):
     items: List[ReportResponse]
     limit: int
     offset: int
+
+
+class ReportFlagResponse(BaseModel):
+    flag_count: int
+    status: str | None  # non-null only when this flag pushed it into quarantine
