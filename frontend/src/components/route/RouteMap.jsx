@@ -1,5 +1,5 @@
 import { useRef, useEffect } from "react";
-import Map, { Source, Layer, Marker } from "react-map-gl/maplibre";
+import Map, { Source, Layer, Marker, NavigationControl } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -57,8 +57,8 @@ export default function RouteMap({ origin, destination, segments, className = ""
         mapStyle={getMapStyle(theme)}
         style={{ width: "100%", height: "100%" }}
         attributionControl={{ compact: true }}
-        interactive={false}
       >
+        <NavigationControl position="bottom-right" showCompass={false} />
         <Source id="route" type="geojson" data={data}>
           <Layer
             id="route-casing"

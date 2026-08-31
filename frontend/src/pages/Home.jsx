@@ -56,7 +56,9 @@ export default function Home() {
 
       {/* bottom overlay: search + route-concerns card, centered and width-capped for tablet/laptop */}
       <div className="absolute inset-x-0 bottom-4 z-10 mx-auto flex w-full max-w-xl flex-col gap-3 px-3 sm:px-4">
-        <DestinationSearch onSubmit={() => navigate("/route-safety")} />
+        <DestinationSearch
+          onSelect={(place) => navigate("/route-safety", { state: { destination: place } })}
+        />
 
         <button
           type="button"

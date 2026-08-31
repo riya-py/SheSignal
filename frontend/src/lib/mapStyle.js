@@ -1,14 +1,14 @@
-// No API key needed for CARTO's free basemap tiles, attribution required (included in SafetyMap).
-// Swap these for a MapTiler/Stadia style + key later if want vector tiles or higher usage limits.
+// CARTO's free anonymous raster tiles now require an API key (started returning an
+// "API KEY REQUIRED" watermark instead of serving tiles). Using OpenStreetMap's own
+// standard tile server instead — genuinely free, no key, no signup.
+// Note: OSM's tile.openstreetmap.org has no official dark variant, so dark mode reuses
+// the same tiles with a CSS filter applied in index.css (.maplibregl-canvas in dark mode).
 export function getMapStyle(theme) {
-  const tiles =
-    theme === "dark"
-      ? ["https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-         "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-         "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"]
-      : ["https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-         "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-         "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"];
+  const tiles = [
+    "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  ];
 
   return {
     version: 8,
@@ -17,11 +17,19 @@ export function getMapStyle(theme) {
         type: "raster",
         tiles,
         tileSize: 256,
+        maxzoom: 19,
         attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       },
     },
-    layers: [{ id: "basemap", type: "raster", source: "basemap" }],
+    layers: [
+      {
+        id: "basemap",
+        type: "raster",
+        source: "basemap",
+        paint: theme === "dark" ? { "raster-brightness-min": 0, "raster-brightness-max": 0.55, "raster-hue-rotate": 180, "raster-saturation": -0.3 } : {},
+      },
+    ],
     glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
   };
 }

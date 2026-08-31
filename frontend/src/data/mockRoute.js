@@ -20,10 +20,10 @@ export const routeSegments = [
 export const highRiskLabelPosition = { longitude: 77.2178, latitude: 28.6305 };
 
 export const transportOptions = [
-  { mode: "car", label: "25 min", icon: Car },
-  { mode: "bike", label: "32 min", icon: Bike },
-  { mode: "walk", label: "45 min", icon: PersonStanding },
-  { mode: "transit", label: "25 min", icon: TrainFront },
+  { mode: "car", label: "Soon", icon: Car },
+  { mode: "bike", label: "Soon", icon: Bike },
+  { mode: "walk", label: "—", icon: PersonStanding },
+  { mode: "transit", label: "Soon", icon: TrainFront },
 ];
 
 export const routeRiskSummary = {

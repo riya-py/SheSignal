@@ -1,40 +1,116 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, MoreVertical, Circle, MapPin, LogIn } from "lucide-react";
+import { ArrowLeft, MoreVertical, Circle, MapPin, LogIn, ArrowUpDown } from "lucide-react";
 import RouteMap from "@/components/route/RouteMap";
 import TransportSelector from "@/components/route/TransportSelector";
 import RouteRiskCard from "@/components/route/RouteRiskCard";
+import DestinationSearch from "@/components/map/DestinationSearch";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouteRisk } from "@/hooks/useRouteRisk";
-import { transportOptions, routeDestination as demoDestination } from "@/data/mockRoute";
-import { DEFAULT_CENTER } from "@/data/mockReports";
+import { transportOptions } from "@/data/mockRoute";
+
+// Reverse-geocodes so "use current location" shows a readable label instead of raw coords.
+async function labelForCoords(latitude, longitude) {
+  try {
+    const url = new URL("https://nominatim.openstreetmap.org/reverse");
+    url.searchParams.set("lat", latitude);
+    url.searchParams.set("lon", longitude);
+    url.searchParams.set("format", "jsonv2");
+    const res = await fetch(url.toString());
+    const data = await res.json();
+    return data.display_name?.split(",").slice(0, 2).join(",").trim() ?? "Current location";
+  } catch {
+    return "Current location";
+  }
+}
+
+function LocationRow({ dot, point, placeholder, editing, onStartEdit, onSelect, onUseCurrentLocation }) {
+  if (editing) {
+    return (
+      <DestinationSearch
+        placeholder={placeholder}
+        initialValue={point?.label ?? ""}
+        autoFocus
+        onSelect={onSelect}
+        onUseCurrentLocation={onUseCurrentLocation}
+      />
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onStartEdit}
+      className="flex w-full items-center gap-2.5 rounded-lg px-1 py-1 text-left text-sm font-medium text-foreground hover:bg-muted"
+    >
+      {dot}
+      <span className={point ? "truncate" : "truncate text-muted-foreground"}>
+        {point?.label ?? placeholder}
+      </span>
+    </button>
+  );
+}
 
 export default function RouteSafety() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { session } = useAuth();
   const [mode, setMode] = useState("walk");
-  const [origin, setOrigin] = useState({ latitude: DEFAULT_CENTER.latitude, longitude: DEFAULT_CENTER.longitude });
+  const [origin, setOrigin] = useState(null);
+  const [destination, setDestination] = useState(location.state?.destination ?? null);
+  const [editingField, setEditingField] = useState(destination ? "origin" : "destination");
+  const [cardDismissed, setCardDismissed] = useState(false);
 
   const { mutate: calculateRoute, data: routeRisk, isPending, isError, error } = useRouteRisk(
     session?.access_token
   );
 
-  useEffect(() => {
-    navigator.geolocation?.getCurrentPosition((pos) => {
-      setOrigin({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
-    });
-  }, []);
+  const handleUseCurrentLocation = (setter) => () => {
+    if (!navigator.geolocation) {
+      toast.error("Location isn't available on this device/browser");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        const label = await labelForCoords(latitude, longitude);
+        setter({ label, latitude, longitude });
+        setEditingField(null);
+      },
+      () => toast.error("Couldn't get your location", { description: "Check location permissions and try again." }),
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  };
+
+  const handleSwap = () => {
+    setOrigin(destination);
+    setDestination(origin);
+  };
 
   useEffect(() => {
-    if (!session) return;
+    if (!session || !origin || !destination) return;
+    setCardDismissed(false);
     calculateRoute({
       origin: { latitude: origin.latitude, longitude: origin.longitude },
-      destination: { latitude: demoDestination.latitude, longitude: demoDestination.longitude },
+      destination: { latitude: destination.latitude, longitude: destination.longitude },
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, origin.latitude, origin.longitude]);
+  }, [session, origin?.latitude, origin?.longitude, destination?.latitude, destination?.longitude]);
+
+  const bothSet = Boolean(origin && destination);
+
+  const minutesLabel = (seconds) => `${Math.max(1, Math.round(seconds / 60))} min`;
+
+  // The backend only computes a real route for one profile (foot-walking) right
+  // now — car/bike/transit have no real data source yet, so they're disabled
+  // rather than showing another made-up number.
+  const displayOptions = transportOptions.map((opt) =>
+    opt.mode === "walk" && routeRisk
+      ? { ...opt, label: minutesLabel(routeRisk.total_duration_seconds) }
+      : opt
+  );
 
   return (
     <div className="flex h-[calc(100dvh-65px)] w-full flex-col md:h-[calc(100dvh-73px)]">
@@ -50,17 +126,43 @@ export default function RouteSafety() {
         </button>
 
         <div className="flex flex-1 flex-col gap-1.5 py-0.5">
-          <div className="flex items-center gap-2.5 text-sm font-medium text-foreground">
-            <Circle className="h-2.5 w-2.5 flex-shrink-0 fill-primary text-primary" />
-            My Location
-          </div>
-          <div className="ml-[5px] h-3 w-px border-l border-dashed border-border" />
-          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-            <MapPin className="h-3.5 w-3.5 flex-shrink-0 fill-risk-high text-risk-high" />
-            {demoDestination.label}
-          </div>
+          <LocationRow
+            dot={<Circle className="h-2.5 w-2.5 flex-shrink-0 fill-primary text-primary" />}
+            point={origin}
+            placeholder="Choose starting point"
+            editing={editingField === "origin"}
+            onStartEdit={() => setEditingField("origin")}
+            onSelect={(place) => {
+              setOrigin(place);
+              setEditingField(null);
+            }}
+            onUseCurrentLocation={handleUseCurrentLocation(setOrigin)}
+          />
+          {editingField !== "origin" && <div className="ml-[5px] h-3 w-px border-l border-dashed border-border" />}
+          <LocationRow
+            dot={<MapPin className="h-3.5 w-3.5 flex-shrink-0 fill-risk-high text-risk-high" />}
+            point={destination}
+            placeholder="Choose destination"
+            editing={editingField === "destination"}
+            onStartEdit={() => setEditingField("destination")}
+            onSelect={(place) => {
+              setDestination(place);
+              setEditingField(null);
+            }}
+            onUseCurrentLocation={handleUseCurrentLocation(setDestination)}
+          />
         </div>
 
+        {bothSet && !editingField && (
+          <button
+            type="button"
+            onClick={handleSwap}
+            aria-label="Swap origin and destination"
+            className="mt-1 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-foreground hover:bg-muted"
+          >
+            <ArrowUpDown className="h-5 w-5" />
+          </button>
+        )}
         <button
           type="button"
           aria-label="More options"
@@ -70,11 +172,26 @@ export default function RouteSafety() {
         </button>
       </div>
 
-      <TransportSelector options={transportOptions} value={mode} onChange={setMode} />
+      <TransportSelector
+        options={displayOptions}
+        value={mode}
+        onChange={setMode}
+        disabledModes={["car", "bike", "transit"]}
+      />
 
       {/* map fills the remaining space, risk card overlays its bottom edge */}
       <div className="relative min-h-0 flex-1">
-        {!session && (
+        {!bothSet && (
+          <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
+            <MapPin className="h-6 w-6 text-muted-foreground" />
+            <p className="text-sm font-semibold text-foreground">Set a starting point and destination</p>
+            <p className="max-w-xs text-xs text-muted-foreground">
+              Tap either field above to search, or use the crosshair icon for your current location.
+            </p>
+          </div>
+        )}
+
+        {bothSet && !session && (
           <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
             <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
               <LogIn className="h-5 w-5" />
@@ -90,35 +207,46 @@ export default function RouteSafety() {
           </div>
         )}
 
-        {session && isPending && (
+        {bothSet && session && isPending && (
           <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
             Calculating reported risk along this route…
           </div>
         )}
 
-        {session && isError && (
+        {bothSet && session && isError && (
           <div className="flex h-full items-center justify-center px-6 text-center text-sm text-destructive">
             {error?.message ?? "Couldn't calculate this route."}
           </div>
         )}
 
-        {session && routeRisk && (
+        {bothSet && session && routeRisk && (
           <>
             <RouteMap
               origin={routeRisk.origin}
               destination={routeRisk.destination}
               segments={routeRisk.segments}
             />
-            <div className="absolute inset-x-0 bottom-0 z-10 mx-auto w-full max-w-xl px-3 pb-3 sm:px-4 sm:pb-4">
-              <RouteRiskCard
-                summary={routeRisk}
-                onViewAlternative={() =>
-                  toast.info("Alternative-route ranking isn't wired up yet", {
-                    description: "The backend returns one route today — comparing alternatives needs more work.",
-                  })
-                }
-              />
-            </div>
+            {cardDismissed ? (
+              <button
+                type="button"
+                onClick={() => setCardDismissed(false)}
+                className="absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full border border-border bg-card/95 px-4 py-2 text-sm font-semibold text-foreground shadow-card backdrop-blur hover:bg-muted sm:bottom-4"
+              >
+                Show risk summary
+              </button>
+            ) : (
+              <div className="absolute inset-x-0 bottom-0 z-10 mx-auto w-full max-w-xl px-3 pb-3 sm:px-4 sm:pb-4">
+                <RouteRiskCard
+                  summary={routeRisk}
+                  onClose={() => setCardDismissed(true)}
+                  onViewAlternative={() =>
+                    toast.info("Alternative-route ranking isn't wired up yet", {
+                      description: "The backend returns one route today — comparing alternatives needs more work.",
+                    })
+                  }
+                />
+              </div>
+            )}
           </>
         )}
       </div>
