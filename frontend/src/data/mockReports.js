@@ -1,4 +1,3 @@
-// Placeholder data — Phase 8 swaps this for GET /risk-zones and GET /reports.
 export const DEFAULT_CENTER = { longitude: 77.209, latitude: 28.6139 }; // India Gate, New Delhi
 
 export const mockRiskZones = [
