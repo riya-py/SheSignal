@@ -1,12 +1,3 @@
-"""
-Strict schema for what the AI is allowed to hand back.
-
-category/severity/time_context are fail-closed: if the model returns
-anything outside the allowed set, validation fails and the caller records
-the analysis as 'failed' rather than trusting an out-of-spec value.
-factors is lenient: unknown tags are filtered out rather than failing the
-whole analysis, since it's a supplementary list, not a primary field.
-"""
 from typing import List, Literal
 
 from pydantic import BaseModel, field_validator
