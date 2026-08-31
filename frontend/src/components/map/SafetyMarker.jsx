@@ -1,8 +1,6 @@
 import { Marker } from "react-map-gl/maplibre";
 import { reportCategories } from "@/lib/reportSchema";
 
-// Deliberately neutral, not risk-colored — a single report is never itself
-// a risk claim; only aggregated patterns (RiskHeatmap) carry a risk level.
 export default function SafetyMarker({ longitude, latitude, category, onClick }) {
   const meta = reportCategories.find((c) => c.value === category);
   const Icon = meta?.icon ?? reportCategories[reportCategories.length - 1].icon;
