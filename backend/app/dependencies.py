@@ -1,17 +1,3 @@
-"""
-Authentication dependency.
-
-Identity is ALWAYS derived from a verified Supabase JWT — never from a
-user_id/reporter_id supplied in the request body. This is the single place
-JWTs get decoded so the verification logic isn't duplicated/drifted.
-
-Verification uses Supabase's JWKS (JWT Signing Keys) endpoint rather than a
-static shared secret. Projects created/migrated after Supabase's rollout of
-asymmetric signing keys issue tokens (typically ES256) that a legacy HS256
-shared-secret check can never validate, regardless of how correctly that
-secret is copied — the algorithm itself differs. PyJWKClient fetches and
-caches the project's public keys and picks the right one per-token.
-"""
 import jwt
 from fastapi import Header, HTTPException, status
 from pydantic import BaseModel
