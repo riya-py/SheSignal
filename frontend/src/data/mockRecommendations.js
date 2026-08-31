@@ -1,8 +1,6 @@
 import { Users, Eye, Phone, Lightbulb, ShieldOff, AlertCircle, ShieldCheck } from "lucide-react";
 import { mockZoneRisk } from "@/data/mockRisk";
 
-// Shaped to match app/models/recommendation.py::RecommendationResponse —
-// Phase 8 replaces this with a GET /recommendations call.
 export const mockRecommendations = {
   latitude: mockZoneRisk.latitude,
   longitude: mockZoneRisk.longitude,
