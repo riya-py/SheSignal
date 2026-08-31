@@ -1,7 +1,5 @@
 import { Source, Layer } from "react-map-gl/maplibre";
 
-// Filled, labeled clusters rather than a blurred "glow" — this is meant to read
-// as a report-density indicator on a map, not a decorative bokeh effect.
 const RISK_COLOR = {
   high: "#e11d48",
   moderate: "#d97706",
