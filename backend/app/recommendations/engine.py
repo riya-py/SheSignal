@@ -1,17 +1,3 @@
-"""
-Turns already-aggregated pattern data into recommendations. Reuses
-app.risk.engine's factor aggregation (total_reports, top_contributing_factors)
-rather than re-deriving it - same "grounded in actual database results"
-guarantee the risk engine already provides.
-
-Safeguards this module enforces by construction:
-- recommendations only ever come from factors actually present in the
-  aggregated data (FACTOR_RECOMMENDATIONS lookup keyed on real factor tags)
-- no numbers are ever inserted into recommendation text except the real
-  `reports` count already computed from the database
-- language is calm and action-oriented, never alarmist (see templates.py)
-- nothing here calls the AI layer - text is 100% deterministic templates
-"""
 from typing import Any, Dict, List, Tuple
 
 from app.models.recommendation import Recommendation
