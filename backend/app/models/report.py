@@ -1,13 +1,3 @@
-"""
-Report request/response schemas.
-
-Validation here is the server-side source of truth — the frontend (Phase 7)
-may duplicate it for UX, but this is what actually gets enforced.
-
-ReportResponse deliberately has NO reporter_id field, so even if a future
-code change accidentally passed one through, FastAPI's response_model would
-strip it before it reaches the client.
-"""
 from datetime import datetime, timedelta, timezone
 from typing import List, Literal, Optional
 from uuid import UUID
