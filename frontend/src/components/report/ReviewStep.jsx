@@ -24,12 +24,13 @@ export default function ReviewStep({ data, onBack, onSubmitted }) {
 
   const category = reportCategories.find((c) => c.value === data.details?.category);
   const timing = timingOptions.find((t) => t.value === data.details?.timing);
-  const locationLabel =
-    data.location?.mode === "current"
-      ? "Current location"
-      : data.location?.coords
-      ? `${data.location.coords.latitude.toFixed(4)}, ${data.location.coords.longitude.toFixed(4)}`
-      : "Not set";
+  const locationLabel = data.location?.label
+    ? data.location.label
+    : data.location?.mode === "current"
+    ? "Current location"
+    : data.location?.coords
+    ? `${data.location.coords.latitude.toFixed(4)}, ${data.location.coords.longitude.toFixed(4)}`
+    : "Not set";
 
   const handleSubmit = () => {
     if (!data.details?.category || !data.location?.coords) return;

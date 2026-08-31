@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import StepIndicator from "@/components/report/StepIndicator";
 import ReportForm from "@/components/report/ReportForm";
@@ -8,8 +8,21 @@ import ReviewStep from "@/components/report/ReviewStep";
 
 export default function Report() {
   const navigate = useNavigate();
+  const routerLocation = useLocation();
+
+  // Other pages (e.g. the route-safety "Report an issue here" menu item) can
+  // hand off a starting point via navigation state: { location: { latitude, longitude, label } }.
+  const incomingLocation = routerLocation.state?.location;
+  const prefilledLocation = incomingLocation
+    ? {
+        mode: "map",
+        coords: { latitude: incomingLocation.latitude, longitude: incomingLocation.longitude },
+        label: incomingLocation.label ?? "",
+      }
+    : null;
+
   const [step, setStep] = useState(1);
-  const [data, setData] = useState({ details: null, location: null });
+  const [data, setData] = useState({ details: null, location: prefilledLocation });
 
   return (
     <div className="mx-auto h-[calc(100dvh-65px)] w-full max-w-lg overflow-y-auto px-4 py-6 md:h-[calc(100dvh-73px)] md:px-6">

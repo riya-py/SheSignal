@@ -1,7 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, MoreVertical, Circle, MapPin, LogIn, ArrowUpDown } from "lucide-react";
+import {
+  ArrowLeft,
+  MoreVertical,
+  Circle,
+  MapPin,
+  LogIn,
+  ArrowUpDown,
+  RotateCcw,
+  Flag,
+  RefreshCw,
+} from "lucide-react";
 import RouteMap from "@/components/route/RouteMap";
 import TransportSelector from "@/components/route/TransportSelector";
 import RouteRiskCard from "@/components/route/RouteRiskCard";
@@ -53,6 +63,72 @@ function LocationRow({ dot, point, placeholder, editing, onStartEdit, onSelect, 
   );
 }
 
+// Simple dropdown menu for the "more options" (⋮) button — no portal, closes on
+// outside click / Escape. Kept local to this page since nothing else needs it yet.
+function RouteOptionsMenu({ onClearRoute, onReportHere, onRefresh, canRefresh }) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) setOpen(false);
+    };
+    const handleEscape = (e) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [open]);
+
+  const items = [
+    { label: "Refresh risk data", icon: RefreshCw, onClick: onRefresh, disabled: !canRefresh },
+    { label: "Clear route", icon: RotateCcw, onClick: onClearRoute },
+    { label: "Report an issue here", icon: Flag, onClick: onReportHere },
+  ];
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-label="More options"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="mt-1 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-foreground hover:bg-muted"
+      >
+        <MoreVertical className="h-5 w-5" />
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          className="absolute right-0 top-11 z-20 w-56 overflow-hidden rounded-xl border border-border bg-card py-1 shadow-card"
+        >
+          {items.map(({ label, icon: Icon, onClick, disabled }) => (
+            <button
+              key={label}
+              type="button"
+              role="menuitem"
+              disabled={disabled}
+              onClick={() => {
+                setOpen(false);
+                onClick?.();
+              }}
+              className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm font-medium text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+            >
+              <Icon className="h-4 w-4 flex-shrink-0" />
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function RouteSafety() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -87,6 +163,28 @@ export default function RouteSafety() {
   const handleSwap = () => {
     setOrigin(destination);
     setDestination(origin);
+  };
+
+  const handleClearRoute = () => {
+    setOrigin(null);
+    setDestination(null);
+    setCardDismissed(false);
+    setEditingField("origin");
+  };
+
+  const handleReportHere = () => {
+    // Report flow starts fresh; destination (if set) is the most useful
+    // starting point since it's usually where the issue was noticed.
+    navigate("/report", { state: { location: destination ?? origin } });
+  };
+
+  const handleRefresh = () => {
+    if (!origin || !destination) return;
+    setCardDismissed(false);
+    calculateRoute({
+      origin: { latitude: origin.latitude, longitude: origin.longitude },
+      destination: { latitude: destination.latitude, longitude: destination.longitude },
+    });
   };
 
   useEffect(() => {
@@ -163,13 +261,12 @@ export default function RouteSafety() {
             <ArrowUpDown className="h-5 w-5" />
           </button>
         )}
-        <button
-          type="button"
-          aria-label="More options"
-          className="mt-1 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-foreground hover:bg-muted"
-        >
-          <MoreVertical className="h-5 w-5" />
-        </button>
+        <RouteOptionsMenu
+          onClearRoute={handleClearRoute}
+          onReportHere={handleReportHere}
+          onRefresh={handleRefresh}
+          canRefresh={bothSet}
+        />
       </div>
 
       <TransportSelector

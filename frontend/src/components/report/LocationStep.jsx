@@ -7,15 +7,18 @@ import { getMapStyle } from "@/lib/mapStyle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { DEFAULT_CENTER } from "@/data/mockReports";
+import DestinationSearch from "@/components/map/DestinationSearch";
 
 export default function LocationStep({ defaultValues, onNext, onBack }) {
   const { theme } = useTheme();
   const [mode, setMode] = useState(defaultValues?.mode ?? null);
   const [coords, setCoords] = useState(defaultValues?.coords ?? null);
+  const [label, setLabel] = useState(defaultValues?.label ?? "");
   const [viewState, setViewState] = useState({ ...DEFAULT_CENTER, zoom: 13 });
 
   const useCurrentLocation = () => {
     setMode("current");
+    setLabel("");
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -30,13 +33,31 @@ export default function LocationStep({ defaultValues, onNext, onBack }) {
 
   const pickOnMap = () => {
     setMode("map");
+    setLabel("");
     if (!coords) setCoords(DEFAULT_CENTER);
+  };
+
+  // Typed a place name (autocomplete via Nominatim) — fly the map there and
+  // drop the pin. User can still tap the map afterwards to fine-tune the
+  // exact spot; that just clears the typed label since it's now a manual pin.
+  const handleSearchSelect = (place) => {
+    const next = { longitude: place.longitude, latitude: place.latitude };
+    setMode("map");
+    setLabel(place.label);
+    setCoords(next);
+    setViewState((v) => ({ ...v, ...next, zoom: 16 }));
   };
 
   const canContinue = mode && coords;
 
   return (
     <div className="space-y-5">
+      <DestinationSearch
+        placeholder="Search for an address or place"
+        onSelect={handleSearchSelect}
+        onUseCurrentLocation={useCurrentLocation}
+      />
+
       <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
         <button
           type="button"
@@ -78,7 +99,10 @@ export default function LocationStep({ defaultValues, onNext, onBack }) {
             attributionControl={{ compact: true }}
             onClick={
               mode === "map"
-                ? (e) => setCoords({ longitude: e.lngLat.lng, latitude: e.lngLat.lat })
+                ? (e) => {
+                    setLabel("");
+                    setCoords({ longitude: e.lngLat.lng, latitude: e.lngLat.lat });
+                  }
                 : undefined
             }
             cursor={mode === "map" ? "crosshair" : "grab"}
@@ -93,7 +117,9 @@ export default function LocationStep({ defaultValues, onNext, onBack }) {
         </div>
       )}
       {mode === "map" && (
-        <p className="text-xs text-muted-foreground">Tap anywhere on the map to drop a pin.</p>
+        <p className="text-xs text-muted-foreground">
+          {label ? `Selected: ${label}. Tap the map to adjust.` : "Tap anywhere on the map to drop a pin."}
+        </p>
       )}
 
       <div className="flex gap-3">
@@ -106,7 +132,7 @@ export default function LocationStep({ defaultValues, onNext, onBack }) {
           size="lg"
           className="flex-1"
           disabled={!canContinue}
-          onClick={() => onNext({ mode, coords })}
+          onClick={() => onNext({ mode, coords, label })}
         >
           Next
         </Button>
