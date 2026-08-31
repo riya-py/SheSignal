@@ -1,15 +1,3 @@
-"""
-Thin client for an OpenAI-compatible chat/completions endpoint.
-
-Works unmodified with Google Gemini's OpenAI-compat layer, Groq, OpenAI,
-OpenRouter, or any other provider that speaks the same wire format - only
-AI_API_BASE_URL / AI_MODEL / AI_API_KEY need to change (see README).
-
-Retries only on transient failures (timeouts, 5xx). Never retries on 4xx
-(bad key, bad request) since retrying won't help. Every failure path raises
-AIError - callers decide how to degrade; this module never talks to the DB
-or HTTP layer of the app.
-"""
 import json
 import logging
 import time
@@ -36,7 +24,6 @@ SYSTEM_PROMPT = (
     "no_security_presence, crowded_unsafe, unsafe_transit_exit, "
     "verbal_abuse, physical_contact, suspicious_vehicle]}"
 )
-
 
 class AIClient:
     def __init__(
