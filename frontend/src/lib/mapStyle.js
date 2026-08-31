@@ -1,5 +1,5 @@
-// No API key needed — CARTO's free basemap tiles, attribution required (included in SafetyMap).
-// Swap these for a MapTiler/Stadia style + key later if you want vector tiles or higher usage limits.
+// No API key needed for CARTO's free basemap tiles, attribution required (included in SafetyMap).
+// Swap these for a MapTiler/Stadia style + key later if want vector tiles or higher usage limits.
 export function getMapStyle(theme) {
   const tiles =
     theme === "dark"
