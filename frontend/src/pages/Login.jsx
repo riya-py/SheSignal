@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { ShieldHeart, Mail, Lock } from "lucide-react";
+import { ShieldCheck, Mail, Lock } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -37,7 +37,7 @@ export default function Login() {
     <div className="mx-auto flex h-[calc(100dvh-65px)] w-full max-w-sm flex-col justify-center px-4 md:h-[calc(100dvh-73px)]">
       <div className="mb-6 flex flex-col items-center gap-2 text-center">
         <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-soft">
-          <ShieldHeart className="h-6 w-6" />
+          <ShieldCheck className="h-6 w-6" />
         </span>
         <h1 className="text-h2">Welcome back</h1>
         <p className="text-sm text-muted-foreground">

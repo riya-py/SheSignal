@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Menu, Bell } from "lucide-react";
-import { ShieldHeart } from "lucide-react";
+import { Menu, Bell, ShieldCheck } from "lucide-react";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import NavMenu from "@/components/layout/NavMenu";
 import AccountMenu from "@/components/layout/AccountMenu";
@@ -24,7 +23,7 @@ export default function Navbar() {
 
           <div className="flex items-center gap-2">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-soft">
-              <ShieldHeart className="h-5 w-5" />
+              <ShieldCheck className="h-5 w-5" />
             </span>
             <div className="leading-tight">
               <p className="font-display text-lg font-extrabold tracking-tight text-foreground">
