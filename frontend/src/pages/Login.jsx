@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ShieldCheck, Mail, Lock } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -11,10 +11,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { loginSchema } from "@/lib/authSchema";
 
 export default function Login() {
-  const { signIn } = useAuth();
+  const { signIn, session } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [submitting, setSubmitting] = useState(false);
+
+  if (session) {
+    return <Navigate to={location.state?.from?.pathname ?? "/"} replace />;
+  }
 
   const {
     register,
@@ -30,7 +34,7 @@ export default function Login() {
       toast.error("Couldn't sign in", { description: error.message });
       return;
     }
-    navigate(location.state?.from?.pathname ?? "/report", { replace: true });
+    navigate(location.state?.from?.pathname ?? "/", { replace: true });
   };
 
   return (

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ShieldCheck, Mail, Lock } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -11,9 +11,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { signupSchema } from "@/lib/authSchema";
 
 export default function Signup() {
-  const { signUp } = useAuth();
+  const { signUp, session } = useAuth();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
+
+  if (session) {
+    return <Navigate to="/" replace />;
+  }
 
   const {
     register,
@@ -34,7 +38,7 @@ export default function Signup() {
       navigate("/login", { replace: true });
       return;
     }
-    navigate("/report", { replace: true });
+    navigate("/", { replace: true });
   };
 
   return (

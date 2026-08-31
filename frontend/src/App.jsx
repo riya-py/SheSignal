@@ -24,24 +24,17 @@ export default function App() {
             <div className="h-[100dvh] w-full overflow-hidden bg-background">
               <Navbar />
               <Routes>
-                {/* Public — anonymous browsing is core to the product */}
-                <Route path="/" element={<Home />} />
-                <Route path="/route-safety" element={<RouteSafety />} />
-                <Route path="/zone-details" element={<ZoneDetails />} />
-                <Route path="/recommendations" element={<Recommendations />} />
-                <Route path="/dashboard" element={<Dashboard />} />
+                {/* Auth screens — not gated, but redirect away if already signed in */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
 
-                {/* Requires a session — the report itself still stays anonymous */}
-                <Route
-                  path="/report"
-                  element={
-                    <ProtectedRoute>
-                      <Report />
-                    </ProtectedRoute>
-                  }
-                />
+                {/* Everything else requires a session — reports themselves still stay anonymous */}
+                <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+                <Route path="/route-safety" element={<ProtectedRoute><RouteSafety /></ProtectedRoute>} />
+                <Route path="/zone-details" element={<ProtectedRoute><ZoneDetails /></ProtectedRoute>} />
+                <Route path="/recommendations" element={<ProtectedRoute><Recommendations /></ProtectedRoute>} />
+                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/report" element={<ProtectedRoute><Report /></ProtectedRoute>} />
               </Routes>
               <Toaster richColors position="top-center" />
             </div>
