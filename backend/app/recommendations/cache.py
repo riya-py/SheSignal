@@ -1,5 +1,3 @@
-"""Same shape as app/risk/cache.py - kept separate/duplicated deliberately
-so Phase 4's cache and tests remain untouched."""
 import time
 from threading import Lock
 from typing import Any, Optional, Tuple
