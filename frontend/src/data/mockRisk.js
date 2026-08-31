@@ -1,7 +1,5 @@
 import { AlertCircle, Lightbulb, ShieldOff, MoonStar, CircleEllipsis } from "lucide-react";
 
-// Shaped to match app/models/risk.py::RiskScoreResponse exactly —
-// Phase 8 replaces this with a GET /risk?latitude&longitude call.
 export const mockZoneRisk = {
   latitude: 28.6165,
   longitude: 77.2178,
