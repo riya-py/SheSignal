@@ -1,12 +1,3 @@
-"""
-Ties together the Phase 5 flow:
-Origin + Destination -> FastAPI -> Rate Limiter -> Route Engine ->
-Route Segments -> Safety Patterns -> Segment Risk -> Overall Risk
-
-Reuses Phase 4's deterministic risk engine and pattern lookup unchanged -
-each segment's risk is computed exactly the same way a point risk lookup
-is, just centered on the segment's midpoint.
-"""
 import logging
 from datetime import datetime, timezone
 
