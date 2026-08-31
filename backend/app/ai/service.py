@@ -2,9 +2,6 @@
 Ties together: rate limiting -> AI call -> Pydantic validation -> storage.
 Mirrors the Phase 0 flow diagram:
 Report -> Supabase -> FastAPI -> Rate Limit -> AI -> Validate JSON -> report_analysis
-
-The original report is always written first (in the reports router) and is
-never rolled back or blocked by anything that happens in here.
 """
 import logging
 
