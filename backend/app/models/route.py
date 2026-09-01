@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -28,6 +28,18 @@ class SegmentRisk(BaseModel):
     based_on_reports: int
 
 
+class RouteAlternative(BaseModel):
+    """A route distinct from the primary one, included only when it scores
+    a strictly lower overall_risk_score - i.e. it's an actual improvement,
+    not just a different path."""
+
+    total_distance_meters: float
+    total_duration_seconds: float
+    overall_risk_score: int
+    overall_risk_level: RiskLevel
+    segments: List[SegmentRisk]
+
+
 class RouteRiskResponse(BaseModel):
     origin: Coordinate
     destination: Coordinate
@@ -38,3 +50,7 @@ class RouteRiskResponse(BaseModel):
     explanation: str
     segments: List[SegmentRisk]
     computed_at: datetime
+    # None when no alternative was found, none scored better than the
+    # primary route, or the alternative lookup failed - all "nothing safer
+    # to offer right now", not an error.
+alternative: Optional[RouteAlternative] = None

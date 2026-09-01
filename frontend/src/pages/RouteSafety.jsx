@@ -138,6 +138,7 @@ export default function RouteSafety() {
   const [destination, setDestination] = useState(location.state?.destination ?? null);
   const [editingField, setEditingField] = useState(destination ? "origin" : "destination");
   const [cardDismissed, setCardDismissed] = useState(false);
+  const [showingAlternative, setShowingAlternative] = useState(false);
 
   const { mutate: calculateRoute, data: routeRisk, isPending, isError, error } = useRouteRisk(
     session?.access_token
@@ -169,6 +170,7 @@ export default function RouteSafety() {
     setOrigin(null);
     setDestination(null);
     setCardDismissed(false);
+    setShowingAlternative(false);
     setEditingField("origin");
   };
 
@@ -181,6 +183,7 @@ export default function RouteSafety() {
   const handleRefresh = () => {
     if (!origin || !destination) return;
     setCardDismissed(false);
+    setShowingAlternative(false);
     calculateRoute({
       origin: { latitude: origin.latitude, longitude: origin.longitude },
       destination: { latitude: destination.latitude, longitude: destination.longitude },
@@ -190,6 +193,7 @@ export default function RouteSafety() {
   useEffect(() => {
     if (!session || !origin || !destination) return;
     setCardDismissed(false);
+    setShowingAlternative(false);
     calculateRoute({
       origin: { latitude: origin.latitude, longitude: origin.longitude },
       destination: { latitude: destination.latitude, longitude: destination.longitude },
@@ -321,7 +325,11 @@ export default function RouteSafety() {
             <RouteMap
               origin={routeRisk.origin}
               destination={routeRisk.destination}
-              segments={routeRisk.segments}
+              segments={
+                showingAlternative && routeRisk.alternative
+                  ? routeRisk.alternative.segments
+                  : routeRisk.segments
+              }
             />
             {cardDismissed ? (
               <button
@@ -334,13 +342,17 @@ export default function RouteSafety() {
             ) : (
               <div className="absolute inset-x-0 bottom-0 z-10 mx-auto w-full max-w-xl px-3 pb-3 sm:px-4 sm:pb-4">
                 <RouteRiskCard
-                  summary={routeRisk}
+                  summary={showingAlternative && routeRisk.alternative ? routeRisk.alternative : routeRisk}
+                  alternative={routeRisk.alternative}
+                  isShowingAlternative={showingAlternative}
+                  onToggleAlternative={() => {
+                    if (!routeRisk.alternative) {
+                      toast.info("No safer alternative found for this route right now");
+                      return;
+                    }
+                    setShowingAlternative((v) => !v);
+                  }}
                   onClose={() => setCardDismissed(true)}
-                  onViewAlternative={() =>
-                    toast.info("Alternative-route ranking isn't wired up yet", {
-                      description: "The backend returns one route today — comparing alternatives needs more work.",
-                    })
-                  }
                 />
               </div>
             )}

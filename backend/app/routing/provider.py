@@ -97,6 +97,54 @@ class RouteProvider:
     def _backoff(self, attempt: int) -> None:
         time.sleep(min(0.5 * (2**attempt), 2.0))
 
+    def get_alternative_routes(self, origin: Coordinate, destination: Coordinate, count: int) -> List[dict]:
+        """Best-effort lookup of up to `count` alternate routes, distinct from
+        the primary route. Alternatives are a nice-to-have, never worth
+        failing (or slowing down/rate-limiting) the primary route response
+        over, so this swallows all errors and returns [] rather than
+        raising - callers should treat an empty list as "no alternatives
+        available right now", not as an error."""
+        url = f"{self._base_url}/{self._profile}/geojson"
+        body = {
+            "coordinates": [
+                [origin[1], origin[0]],
+                [destination[1], destination[0]],
+            ],
+            # share_factor/weight_factor are ORS's recommended defaults for
+            # getting routes that meaningfully diverge from the primary one
+            # instead of near-duplicates.
+            "alternative_routes": {"target_count": count, "weight_factor": 1.4, "share_factor": 0.6},
+        }
+        headers = {"Authorization": self._api_key, "Content-Type": "application/json"}
+
+        try:
+            resp = self._http_client.post(url, json=body, headers=headers)
+            if resp.status_code >= 400:
+                logger.info("Alternative route lookup returned %s; skipping", resp.status_code)
+                return []
+            data = resp.json()
+            features = data["features"]
+            routes: List[dict] = []
+            # features[0] is effectively the same primary route we already
+            # scored separately - only the rest are actual alternatives.
+            for feature in features[1:]:
+                raw_coords = feature["geometry"]["coordinates"]
+                coordinates: List[Coordinate] = [(lat, lng) for lng, lat in raw_coords]
+                if len(coordinates) < 2:
+                    continue
+                segment_summary = feature["properties"]["segments"][0]
+                routes.append(
+                    {
+                        "coordinates": coordinates,
+                        "distance_meters": float(segment_summary["distance"]),
+                        "duration_seconds": float(segment_summary["duration"]),
+                    }
+                )
+            return routes[:count]
+        except (httpx.HTTPError, KeyError, IndexError, TypeError, ValueError):
+            logger.warning("Alternative route lookup failed; continuing without alternatives")
+            return []
+
 
 _provider: Optional[RouteProvider] = None
 
@@ -121,3 +169,8 @@ def get_route(origin: Coordinate, destination: Coordinate) -> dict:
     """Module-level entry point so app/routing/service.py (and tests) can
     call/mock this without reaching into the RouteProvider singleton."""
     return get_provider().get_route(origin, destination)
+
+
+def get_alternative_routes(origin: Coordinate, destination: Coordinate, count: int) -> List[dict]:
+    """Module-level entry point, mirroring get_route above."""
+    return get_provider().get_alternative_routes(origin, destination, count)

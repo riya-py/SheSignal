@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Menu, Bell, ShieldCheck } from "lucide-react";
+import { Menu, ShieldCheck } from "lucide-react";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import NavMenu from "@/components/layout/NavMenu";
 import AccountMenu from "@/components/layout/AccountMenu";
+import NotificationsMenu from "@/components/layout/NotificationsMenu";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -38,14 +39,7 @@ export default function Navbar() {
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="relative flex h-10 w-10 items-center justify-center rounded-full text-foreground hover:bg-muted"
-          >
-            <Bell className="h-5 w-5" />
-            <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-accent" />
-          </button>
+          <NotificationsMenu />
           <AccountMenu />
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { AlertTriangle, ShieldQuestion, ShieldCheck, RouteOff, X } from "lucide-react";
+import { AlertTriangle, ShieldQuestion, ShieldCheck, RouteOff, Undo2, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,12 +10,25 @@ const ZONE_META = {
   low: { icon: ShieldCheck, className: "text-risk-low", countLabel: "low-report area" },
 };
 
-export default function RouteRiskCard({ summary, onViewAlternative, onClose }) {
+// summary: the route currently on screen (primary or alternative).
+// alternative: RouteRiskResponse.alternative - null when the backend found
+// no route that scores better than the primary one.
+// isShowingAlternative / onToggleAlternative: lets RouteSafety swap which
+// route's segments are drawn on the map without re-fetching.
+export default function RouteRiskCard({
+  summary,
+  alternative,
+  isShowingAlternative,
+  onToggleAlternative,
+  onClose,
+}) {
   const copy = RISK_LEVEL_COPY[summary.overall_risk_level];
   const zoneCounts = summary.segments.reduce(
     (acc, s) => ({ ...acc, [s.risk_level]: (acc[s.risk_level] ?? 0) + 1 }),
     { high: 0, moderate: 0, low: 0 }
   );
+
+  const hasAlternative = Boolean(alternative);
 
   return (
     <Card className="relative w-full bg-card/95 p-4 shadow-card backdrop-blur sm:p-5">
@@ -31,7 +44,9 @@ export default function RouteRiskCard({ summary, onViewAlternative, onClose }) {
       )}
 
       <div className="flex items-start justify-between gap-3 pr-8">
-        <h2 className="text-h3">Reported Risk Along This Route</h2>
+        <h2 className="text-h3">
+          {isShowingAlternative ? "Alternative Route" : "Reported Risk Along This Route"}
+        </h2>
         <Badge variant={summary.overall_risk_level}>{copy.badge}</Badge>
       </div>
 
@@ -58,10 +73,23 @@ export default function RouteRiskCard({ summary, onViewAlternative, onClose }) {
         </ul>
       </div>
 
-      <Button variant="outline" size="lg" className="mt-4 w-full gap-2" onClick={onViewAlternative}>
-        <RouteOff className="h-4 w-4" />
-        View Alternative With Fewer Reports
-      </Button>
+      {isShowingAlternative ? (
+        <Button variant="outline" size="lg" className="mt-4 w-full gap-2" onClick={onToggleAlternative}>
+          <Undo2 className="h-4 w-4" />
+          Back to Original Route
+        </Button>
+      ) : (
+        <Button
+          variant="outline"
+          size="lg"
+          className="mt-4 w-full gap-2"
+          disabled={!hasAlternative}
+          onClick={onToggleAlternative}
+        >
+          <RouteOff className="h-4 w-4" />
+          {hasAlternative ? "View Alternative With Fewer Reports" : "No Safer Alternative Found"}
+        </Button>
+      )}
     </Card>
   );
 }
