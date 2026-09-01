@@ -8,6 +8,7 @@ from app.models.recommendation import RecommendationResponse
 from app.rate_limit import limiter
 from app.recommendations.cache import build_cache_key, recommendation_cache
 from app.recommendations.engine import build_recommendations
+from app.risk.engine import compute_risk
 
 
 def get_recommendations(
@@ -29,8 +30,14 @@ def get_recommendations(
         return cached
 
     patterns = database.find_nearby_patterns(latitude, longitude, radius)
+
+    # Reuse the same risk model that powers /risk so the "Priority" shown on
+    # the authority tab always agrees with the score shown on the risk
+    # screen, instead of a second, disconnected notion of severity.
+    _, risk_level, _, _, _, _ = compute_risk(patterns, settings)
+
     user_recs, authority_recs, factors, reports, pattern_count = build_recommendations(
-        patterns, settings.RECOMMENDATIONS_MAX_FACTORS
+        patterns, settings.RECOMMENDATIONS_MAX_FACTORS, risk_level
     )
 
     response = RecommendationResponse(
@@ -40,6 +47,7 @@ def get_recommendations(
         based_on_reports=reports,
         based_on_patterns=pattern_count,
         based_on_factors=factors,
+        risk_level=risk_level,
         user_recommendations=user_recs,
         authority_recommendations=authority_recs,
         computed_at=datetime.now(timezone.utc),

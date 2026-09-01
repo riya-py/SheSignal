@@ -1,49 +1,72 @@
 from typing import Dict, TypedDict
 
+
 class FactorTemplate(TypedDict):
-    user: str
-    authority: str
+    route: str
+    warning: str
+    intervention: str
+    infrastructure_action: str
 
 
 FACTOR_RECOMMENDATIONS: Dict[str, FactorTemplate] = {
     "poor_lighting": {
-        "user": "This area has reported poor lighting - consider a well-lit alternate path, especially after dark.",
-        "authority": "Multiple reports cite poor lighting in this area - consider inspecting and improving street lighting.",
+        "route": "Where possible, choose a well-lit main road instead of this stretch, especially after dark.",
+        "warning": "This area has reported poor lighting, which limits visibility, especially at night.",
+        "intervention": "Prioritize this location for a lighting inspection based on recent reports.",
+        "infrastructure_action": "Repair or replace non-functioning streetlights and add lighting at reported dark spots.",
     },
     "isolated_area": {
-        "user": "This area has been reported as isolated - consider traveling with a companion or during busier hours.",
-        "authority": "This area has been reported as isolated with low foot traffic - consider measures to increase visibility and activity.",
+        "route": "Prefer routes through busier, populated streets rather than this isolated stretch.",
+        "warning": "This area has been reported as isolated with low foot traffic.",
+        "intervention": "Review options to increase footfall and visibility in this area.",
+        "infrastructure_action": "Add lighting, signage, or encourage nearby activity to reduce isolation.",
     },
     "following": {
-        "user": "There are reports of people being followed here - stay on populated routes and consider sharing your location with someone you trust.",
-        "authority": "Multiple reports describe being followed in this area - consider increasing visible security presence.",
+        "route": "Stick to populated routes and avoid shortcuts through quiet streets here.",
+        "warning": "There are reports of people being followed in this area.",
+        "intervention": "Review patrol routes and increase visible security presence near this location.",
+        "infrastructure_action": "Deploy foot patrols or install visible CCTV coverage along this stretch.",
     },
     "harassment": {
-        "user": "Harassment has been reported in this area - consider an alternate route or traveling with others.",
-        "authority": "Recurring harassment reports have been logged here - consider community safety outreach or monitoring.",
+        "route": "Consider an alternate route through this area, especially around the times mentioned in reports.",
+        "warning": "Harassment has been reported in this area.",
+        "intervention": "Prioritize this location for community safety outreach and monitoring.",
+        "infrastructure_action": "Increase patrols and set up a visible, accessible reporting point in this area.",
     },
     "no_security_presence": {
-        "user": "This area has been reported as lacking visible security - stay alert and avoid lingering alone.",
-        "authority": "Reports indicate a lack of visible security in this area - consider deploying patrols or security personnel.",
+        "route": "Where possible, route through areas with visible security or staff presence.",
+        "warning": "This area has been reported as lacking visible security.",
+        "intervention": "Assess this location for a security or patrol deployment.",
+        "infrastructure_action": "Station security personnel or install a help point/CCTV at this location.",
     },
     "crowded_unsafe": {
-        "user": "This area has been reported as unsafely crowded - stay aware of your surroundings and keep belongings secure.",
-        "authority": "Reports describe unsafe crowding in this area - consider crowd management measures.",
+        "route": "If you can, avoid peak-crowding times here or take a less congested alternate path.",
+        "warning": "This area has been reported as unsafely crowded.",
+        "intervention": "Review crowd management arrangements for this location.",
+        "infrastructure_action": "Introduce crowd control measures or staff management during peak hours.",
     },
     "unsafe_transit_exit": {
-        "user": "This transit exit has been reported as unsafe - consider an alternate exit or waiting for a busier moment to leave.",
-        "authority": "This transit exit has multiple safety reports - consider improving lighting, signage, or staffing near the exit.",
+        "route": "Use an alternate exit, or wait for a busier moment before leaving through this one.",
+        "warning": "This transit exit has been reported as unsafe.",
+        "intervention": "Review lighting, signage, and staffing near this transit exit.",
+        "infrastructure_action": "Add lighting, clear signage, and staff coverage at this transit exit.",
     },
     "verbal_abuse": {
-        "user": "Verbal abuse has been reported in this area - trust your instincts and remove yourself from uncomfortable situations quickly.",
-        "authority": "Reports of verbal abuse have been logged here - consider community awareness programs and clear reporting channels.",
+        "route": "Consider an alternate route through this area if one is available.",
+        "warning": "Verbal abuse has been reported in this area.",
+        "intervention": "Launch community awareness efforts and ensure reporting channels are visible here.",
+        "infrastructure_action": "Set up visible reporting points and awareness signage in this area.",
     },
     "physical_contact": {
-        "user": "Reports of unwanted physical contact have been logged here - consider avoiding this area when alone, especially during low-traffic hours.",
-        "authority": "This area has reports of unwanted physical contact - consider increased security presence and clear reporting channels.",
+        "route": "Avoid this area when alone, especially during low-traffic hours - take a busier alternate route.",
+        "warning": "Reports of unwanted physical contact have been logged in this area.",
+        "intervention": "Increase security presence and ensure reporting channels are clear here.",
+        "infrastructure_action": "Deploy visible security presence and install a help point in this area.",
     },
     "suspicious_vehicle": {
-        "user": "Suspicious vehicles have been reported in this area - avoid approaching unfamiliar vehicles and stay aware when passing through.",
-        "authority": "Reports describe suspicious vehicle activity in this area - consider increased patrol or surveillance coverage.",
+        "route": "Stay aware of vehicles when passing through, and avoid approaching unfamiliar ones.",
+        "warning": "Suspicious vehicles have been reported in this area.",
+        "intervention": "Review patrol or surveillance coverage for vehicle activity here.",
+        "infrastructure_action": "Add CCTV coverage or checkpoints to monitor vehicle activity in this area.",
     },
 }

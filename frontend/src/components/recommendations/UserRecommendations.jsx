@@ -21,10 +21,10 @@ export default function UserRecommendations({ recommendations }) {
           </div>
         ) : (
           <ul className="divide-y divide-border">
-            {recommendations.map((rec) => {
+            {recommendations.map((rec, i) => {
               const Icon = iconForRecommendation(rec);
               return (
-                <li key={rec.text} className="flex items-center gap-3 px-3 py-3.5">
+                <li key={`${rec.type}-${i}`} className="flex items-start gap-3 px-3 py-3.5">
                   <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                     <Icon className="h-4.5 w-4.5" />
                   </span>
@@ -42,7 +42,7 @@ export default function UserRecommendations({ recommendations }) {
         </span>
         <div>
           <p className="text-sm font-bold text-foreground">Your safety matters.</p>
-          <p className="text-xs text-muted-foreground">You are not alone.</p>
+          <p className="text-xs text-muted-foreground">Trust your instincts.</p>
         </div>
       </div>
     </div>
