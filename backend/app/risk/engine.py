@@ -84,6 +84,22 @@ def diversity_score(patterns: List[Dict[str, Any]]) -> float:
     return min(100.0, len(factors) / 4.0 * 100.0) if factors else 0.0
 
 
+TIME_BUCKET_ORDER = ["morning", "afternoon", "evening", "night"]
+
+
+def time_bucket_breakdown(patterns: List[Dict[str, Any]]) -> Dict[str, int]:
+    """Report counts per time-of-day bucket, straight from the patterns
+    table's own `time_bucket` column (see 0003_patterns.sql) - the same
+    AI-derived/occurred_at-derived bucketing already used for clustering,
+    just re-summed here instead of invented client-side."""
+    breakdown = {bucket: 0 for bucket in TIME_BUCKET_ORDER}
+    for pattern in patterns:
+        bucket = pattern.get("time_bucket")
+        if bucket in breakdown:
+            breakdown[bucket] += int(pattern.get("report_count", 0) or 0)
+    return breakdown
+
+
 def combine_scores(
     density: float,
     severity: float,

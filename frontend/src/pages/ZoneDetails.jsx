@@ -2,10 +2,11 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, Share2, ArrowRight } from "lucide-react";
 import RiskScore from "@/components/risk/RiskScore";
 import RiskReasons from "@/components/risk/RiskReasons";
-import { TopIssuesCard } from "@/components/risk/RiskTrends";
+import { ReportTrendCard, TopIssuesCard } from "@/components/risk/RiskTrends";
 import { Button } from "@/components/ui/button";
 import { useRiskAssessment } from "@/hooks/useRiskAssessment";
 import { DEFAULT_CENTER } from "@/data/mockReports";
+import { toTrendData } from "@/data/mockRisk";
 
 export default function ZoneDetails() {
   const navigate = useNavigate();
@@ -49,7 +50,8 @@ export default function ZoneDetails() {
             <RiskReasons factors={risk.contributing_factors} />
           </div>
 
-          <div className="mt-4">
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <ReportTrendCard trend={toTrendData(risk.time_of_day_breakdown)} />
             <TopIssuesCard factors={risk.contributing_factors} />
           </div>
 

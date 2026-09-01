@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Literal
+from typing import Dict, List, Literal
 
 from pydantic import BaseModel
 
@@ -21,5 +21,6 @@ class RiskScoreResponse(BaseModel):
     based_on_patterns: int
     based_on_reports: int
     contributing_factors: List[ContributingFactor]
+    time_of_day_breakdown: Dict[str, int]
     explanation: str
     computed_at: datetime

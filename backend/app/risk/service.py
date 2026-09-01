@@ -8,7 +8,7 @@ from app.config import get_settings
 from app.models.risk import RiskScoreResponse
 from app.rate_limit import limiter
 from app.risk.cache import build_cache_key, risk_cache
-from app.risk.engine import compute_risk
+from app.risk.engine import compute_risk, time_bucket_breakdown
 
 
 def get_risk_assessment(
@@ -78,6 +78,7 @@ def get_risk_assessment(
         based_on_patterns=pattern_count,
         based_on_reports=reports,
         contributing_factors=factors,
+        time_of_day_breakdown=time_bucket_breakdown(patterns),
         explanation=explanation,
         computed_at=datetime.now(timezone.utc),
     )

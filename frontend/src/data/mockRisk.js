@@ -14,6 +14,9 @@ export const mockZoneRisk = {
     { factor: "lack_of_security", count: 3, share: 0.13 },
     { factor: "other", count: 2, share: 0.09 },
   ],
+  // One entry per patterns.time_bucket - the same morning/afternoon/evening/
+  // night split the backend already clusters reports into, just summed.
+  time_of_day_breakdown: { morning: 3, afternoon: 4, evening: 9, night: 7 },
   explanation: "Most incidents reported after 8 PM.",
   computed_at: "2026-08-24T20:00:00Z",
 };
@@ -47,14 +50,23 @@ export const FACTOR_META = {
 
 export const timeOfDayNote = { icon: MoonStar, label: "Most incidents reported after 8 PM" };
 
-export const mockReportTrend = [
-  { hour: "12 AM", reports: 2 },
-  { hour: "4 AM", reports: 1 },
-  { hour: "8 AM", reports: 3 },
-  { hour: "12 PM", reports: 4 },
-  { hour: "4 PM", reports: 5 },
-  { hour: "8 PM", reports: 9 },
-  { hour: "12 AM", reports: 6 },
-];
+// The backend only ever knows morning/afternoon/evening/night (that's the
+// real granularity patterns are clustered at - see 0003_patterns.sql), so
+// the trend chart is 4 real buckets rather than a faked 24-hour curve.
+export const TIME_BUCKET_ORDER = ["morning", "afternoon", "evening", "night"];
+
+export const TIME_BUCKET_LABEL = {
+  morning: "Morning",
+  afternoon: "Afternoon",
+  evening: "Evening",
+  night: "Night",
+};
+
+export function toTrendData(breakdown) {
+  return TIME_BUCKET_ORDER.map((bucket) => ({
+    hour: TIME_BUCKET_LABEL[bucket],
+    reports: breakdown?.[bucket] ?? 0,
+  }));
+}
 
 export const DONUT_COLORS = ["#ec4899", "#8b5cf6", "#c4b5fd", "#cbd5e1"];
