@@ -32,3 +32,21 @@ export async function searchPlaces(query, { signal } = {}) {
     longitude: parseFloat(r.lon),
   }));
 }
+
+export async function reverseGeocode(latitude, longitude, { signal } = {}) {
+  const url = new URL("https://nominatim.openstreetmap.org/reverse");
+  url.searchParams.set("lat", latitude);
+  url.searchParams.set("lon", longitude);
+  url.searchParams.set("format", "jsonv2");
+
+  const response = await fetch(url.toString(), {
+    signal,
+    headers: { Accept: "application/json" },
+  });
+  if (!response.ok) return null;
+
+  const result = await response.json();
+  if (!result?.display_name) return null;
+
+  return result.display_name.split(",").slice(0, 2).join(",").trim();
+}

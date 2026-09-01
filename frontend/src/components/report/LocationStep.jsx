@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { DEFAULT_CENTER } from "@/data/mockReports";
 import DestinationSearch from "@/components/map/DestinationSearch";
+import { reverseGeocode } from "@/lib/geocode";
 
 export default function LocationStep({ defaultValues, onNext, onBack }) {
   const { theme } = useTheme();
@@ -25,6 +26,9 @@ export default function LocationStep({ defaultValues, onNext, onBack }) {
         const next = { longitude: pos.coords.longitude, latitude: pos.coords.latitude };
         setCoords(next);
         setViewState((v) => ({ ...v, ...next, zoom: 15 }));
+        reverseGeocode(next.latitude, next.longitude).then((place) => {
+          if (place) setLabel(place);
+        });
       },
       () => {},
       { enableHighAccuracy: true, timeout: 8000 }
@@ -100,8 +104,12 @@ export default function LocationStep({ defaultValues, onNext, onBack }) {
             onClick={
               mode === "map"
                 ? (e) => {
+                    const next = { longitude: e.lngLat.lng, latitude: e.lngLat.lat };
                     setLabel("");
-                    setCoords({ longitude: e.lngLat.lng, latitude: e.lngLat.lat });
+                    setCoords(next);
+                    reverseGeocode(next.latitude, next.longitude).then((place) => {
+                      if (place) setLabel(place);
+                    });
                   }
                 : undefined
             }
