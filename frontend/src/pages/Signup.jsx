@@ -49,7 +49,9 @@ export default function Signup() {
         </span>
         <h1 className="text-h2">Create your account</h1>
         <p className="text-sm text-muted-foreground">
-          Your account is never shown on your reports — they stay anonymous.
+          Your account is never shown on your reports 
+          <br />
+          they stay anonymous.
         </p>
       </div>
 
