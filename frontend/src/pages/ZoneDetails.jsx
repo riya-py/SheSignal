@@ -52,7 +52,7 @@ export default function ZoneDetails() {
 
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <ReportTrendCard trend={toTrendData(risk.time_of_day_breakdown)} />
-            <TopIssuesCard factors={risk.contributing_factors} />
+            <TopIssuesCard factors={risk.contributing_factors} reportsCount={risk.based_on_reports} />
           </div>
 
           <Button

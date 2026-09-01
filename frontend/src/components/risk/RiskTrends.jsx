@@ -1,5 +1,6 @@
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import { Pie, PieChart, Cell } from "recharts";
+import { PieChart as PieChartIcon } from "lucide-react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { FACTOR_META, DONUT_COLORS } from "@/data/mockRisk";
 
@@ -36,7 +37,7 @@ export function ReportTrendCard({ trend }) {
   );
 }
 
-export function TopIssuesCard({ factors }) {
+export function TopIssuesCard({ factors, reportsCount = 0 }) {
   const data = factors.map((f) => ({
     name: FACTOR_META[f.factor]?.shortLabel ?? f.factor,
     factor: f.factor,
@@ -48,33 +49,47 @@ export function TopIssuesCard({ factors }) {
       <CardHeader>
         <CardTitle>Top Issues</CardTitle>
       </CardHeader>
-      <div className="flex flex-col items-center gap-4 px-5 pb-5 sm:flex-row">
-        <div className="h-32 w-32 flex-shrink-0">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie data={data} dataKey="value" innerRadius={38} outerRadius={58} paddingAngle={2}>
-                {data.map((entry, i) => (
-                  <Cell key={entry.factor} fill={DONUT_COLORS[i % DONUT_COLORS.length]} stroke="none" />
-                ))}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
+      {data.length === 0 ? (
+        <div className="flex flex-col items-center gap-2 px-5 pb-6 pt-1 text-center">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
+            <PieChartIcon className="h-4.5 w-4.5" />
+          </span>
+          <p className="text-sm font-medium text-foreground">No categorized issues yet</p>
+          <p className="max-w-xs text-xs text-muted-foreground">
+            {reportsCount > 0
+              ? `${reportsCount} report${reportsCount === 1 ? " has" : "s have"} been made in this area, but none could be broken down into a specific issue type yet.`
+              : "There aren't enough reports near here to break down top issues."}
+          </p>
         </div>
-        <ul className="w-full space-y-1.5">
-          {data.map((entry, i) => (
-            <li key={entry.factor} className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2 text-foreground">
-                <span
-                  className="h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: DONUT_COLORS[i % DONUT_COLORS.length] }}
-                />
-                {entry.name}
-              </span>
-              <span className="font-semibold text-foreground">{entry.value}%</span>
-            </li>
-          ))}
-        </ul>
-      </div>
+      ) : (
+        <div className="flex flex-col items-center gap-4 px-5 pb-5 sm:flex-row">
+          <div className="h-32 w-32 flex-shrink-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={data} dataKey="value" innerRadius={38} outerRadius={58} paddingAngle={2}>
+                  {data.map((entry, i) => (
+                    <Cell key={entry.factor} fill={DONUT_COLORS[i % DONUT_COLORS.length]} stroke="none" />
+                  ))}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <ul className="w-full space-y-1.5">
+            {data.map((entry, i) => (
+              <li key={entry.factor} className="flex items-center justify-between text-sm">
+                <span className="flex items-center gap-2 text-foreground">
+                  <span
+                    className="h-2.5 w-2.5 rounded-full"
+                    style={{ backgroundColor: DONUT_COLORS[i % DONUT_COLORS.length] }}
+                  />
+                  {entry.name}
+                </span>
+                <span className="font-semibold text-foreground">{entry.value}%</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </Card>
   );
 }
