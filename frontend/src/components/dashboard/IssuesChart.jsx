@@ -12,7 +12,7 @@ export default function IssuesChart({ data }) {
       <div className="h-52 px-2 pb-4 sm:h-64">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ top: 4, right: 28, left: 8, bottom: 0 }}>
-            <XAxis type="number" hide domain={[0, 60]} />
+            <XAxis type="number" hide domain={[0, 100]} />
             <YAxis
               type="category"
               dataKey="label"

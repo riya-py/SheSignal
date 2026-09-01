@@ -1,4 +1,4 @@
-export const DEFAULT_CENTER = { longitude: 77.209, latitude: 28.6139 }; // India Gate, New Delhi
+export const DEFAULT_CENTER = { longitude: 77.2167, latitude: 28.6315 }; // matches seeded reports/pattern in Supabase
 
 export const mockRiskZones = [
   {

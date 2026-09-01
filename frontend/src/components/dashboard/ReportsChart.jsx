@@ -1,7 +1,32 @@
+import { useMemo } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 
+// Picks a "nice" step (5, 10, 25, 50, 100...) so small report counts get
+// small increments and large counts get large ones, instead of a fixed 0-200.
+function getNiceAxisConfig(data, key) {
+  const max = Math.max(0, ...data.map((d) => d[key] ?? 0));
+  if (max <= 0) return { domain: [0, 20], ticks: [0, 5, 10, 15, 20] };
+
+  const rawStep = max / 4;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const residual = rawStep / magnitude;
+
+  let step;
+  if (residual > 5) step = 10 * magnitude;
+  else if (residual > 2) step = 5 * magnitude;
+  else if (residual > 1) step = 2 * magnitude;
+  else step = magnitude;
+
+  const topTick = Math.ceil(max / step) * step;
+  const ticks = [];
+  for (let t = 0; t <= topTick; t += step) ticks.push(t);
+  return { domain: [0, topTick], ticks };
+}
+
 export default function ReportsChart({ data }) {
+  const { domain, ticks } = useMemo(() => getNiceAxisConfig(data, "reports"), [data]);
+
   return (
     <Card>
       <CardHeader>
@@ -22,7 +47,8 @@ export default function ReportsChart({ data }) {
               tickLine={false}
               axisLine={false}
               tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-              domain={[0, 200]}
+              domain={domain}
+              ticks={ticks}
             />
             <Tooltip
               contentStyle={{

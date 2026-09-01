@@ -25,7 +25,7 @@ def get_risk_assessment(
     )
 
     radius = (
-        radius_meters
+    radius_meters
         if radius_meters is not None
         else settings.RISK_DEFAULT_RADIUS_METERS
     )

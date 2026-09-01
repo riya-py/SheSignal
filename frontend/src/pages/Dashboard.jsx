@@ -1,13 +1,15 @@
+import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { FileText, Waypoints, Gauge, AlertTriangle } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
 import ReportsChart from "@/components/dashboard/ReportsChart";
 import IssuesChart from "@/components/dashboard/IssuesChart";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RISK_LEVEL_COPY } from "@/lib/riskCopy";
 import { useRiskAssessment } from "@/hooks/useRiskAssessment";
 import { DEFAULT_CENTER } from "@/data/mockReports";
-import { reportsOverTime } from "@/data/mockDashboard";
+import { REPORTS_OVER_TIME_BY_RANGE, RANGE_LABEL } from "@/data/mockDashboard";
 
 const FACTOR_SHORT_LABEL = {
   harassment: "Harassment",
@@ -21,6 +23,7 @@ export default function Dashboard() {
   const latitude = location.state?.latitude ?? DEFAULT_CENTER.latitude;
   const longitude = location.state?.longitude ?? DEFAULT_CENTER.longitude;
 
+  const [range, setRange] = useState("30d");
   const { data: risk, isLoading, isError } = useRiskAssessment({ latitude, longitude });
 
   const issuesData = (risk?.contributing_factors ?? []).map((f) => ({
@@ -30,11 +33,15 @@ export default function Dashboard() {
 
   return (
     <div className="mx-auto h-[calc(100dvh-65px)] w-full max-w-4xl overflow-y-auto px-4 py-5 md:h-[calc(100dvh-73px)] md:px-6">
-      <div className="mb-1 flex items-center justify-between">
-        <h1 className="text-h2">Local Safety Insights</h1>
-        <span className="whitespace-nowrap rounded-full border border-border bg-card px-3.5 py-1.5 text-xs font-semibold text-foreground">
-          Last 30 Days
-        </span>
+      <div className="mb-1 flex items-center justify-between gap-3">
+        <h1 className="text-h2">Community Safety Insights</h1>
+        <Tabs value={range} onValueChange={setRange}>
+          <TabsList>
+            <TabsTrigger value="24h">24H</TabsTrigger>
+            <TabsTrigger value="7d">7D</TabsTrigger>
+            <TabsTrigger value="30d">30D</TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
       <p className="mb-5 text-sm text-muted-foreground">
         Nearby area · based on community reports, not a platform-wide count
@@ -54,7 +61,7 @@ export default function Dashboard() {
               label="Reports in this area"
               value={risk.based_on_reports}
               icon={FileText}
-              sublabel="Last 30 days"
+              sublabel={RANGE_LABEL[range]}
             />
             <StatCard
               label="Patterns detected"
@@ -71,7 +78,7 @@ export default function Dashboard() {
           </div>
 
           <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <ReportsChart data={reportsOverTime} />
+            <ReportsChart data={REPORTS_OVER_TIME_BY_RANGE[range]} />
             <IssuesChart data={issuesData} />
           </div>
           <p className="mt-2 text-[11px] text-muted-foreground/70">
