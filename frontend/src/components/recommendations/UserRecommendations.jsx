@@ -15,7 +15,9 @@ export default function UserRecommendations({ recommendations }) {
             <p className="text-sm font-medium text-foreground">No specific tips for this area yet</p>
             <p className="max-w-xs text-xs text-muted-foreground">
               There aren't enough reports near here for tailored recommendations. General safety
-              habits still apply — stay aware of your surroundings and share your live location
+              habits still apply 
+              <br />
+              stay aware of your surroundings and share your live location
               with someone you trust.
             </p>
           </div>
