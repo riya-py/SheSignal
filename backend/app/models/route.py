@@ -53,4 +53,4 @@ class RouteRiskResponse(BaseModel):
     # None when no alternative was found, none scored better than the
     # primary route, or the alternative lookup failed - all "nothing safer
     # to offer right now", not an error.
-alternative: Optional[RouteAlternative] = None
+    alternative: Optional[RouteAlternative] = None

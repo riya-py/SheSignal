@@ -11,6 +11,7 @@ import {
   RotateCcw,
   Flag,
   RefreshCw,
+  Crosshair,
 } from "lucide-react";
 import RouteMap from "@/components/route/RouteMap";
 import TransportSelector from "@/components/route/TransportSelector";
@@ -36,7 +37,16 @@ async function labelForCoords(latitude, longitude) {
   }
 }
 
-function LocationRow({ dot, point, placeholder, editing, onStartEdit, onSelect, onUseCurrentLocation }) {
+function LocationRow({
+  dot,
+  point,
+  placeholder,
+  editing,
+  onStartEdit,
+  onSelect,
+  onUseCurrentLocation,
+  showQuickLocationButton,
+}) {
   if (editing) {
     return (
       <DestinationSearch
@@ -50,16 +60,32 @@ function LocationRow({ dot, point, placeholder, editing, onStartEdit, onSelect, 
   }
 
   return (
-    <button
-      type="button"
-      onClick={onStartEdit}
-      className="flex w-full items-center gap-2.5 rounded-lg px-1 py-1 text-left text-sm font-medium text-foreground hover:bg-muted"
-    >
-      {dot}
-      <span className={point ? "truncate" : "truncate text-muted-foreground"}>
-        {point?.label ?? placeholder}
-      </span>
-    </button>
+    <div className="flex w-full items-center gap-1">
+      <button
+        type="button"
+        onClick={onStartEdit}
+        className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-1 py-1 text-left text-sm font-medium text-foreground hover:bg-muted"
+      >
+        {dot}
+        <span className={point ? "truncate" : "truncate text-muted-foreground"}>
+          {point?.label ?? placeholder}
+        </span>
+      </button>
+      {/* Lets you set this field to your current location in one tap,
+          without first opening the search box - the search box still has
+          its own crosshair button too once opened, this is just a shortcut
+          for the common case (starting from where you are right now). */}
+      {showQuickLocationButton && !point && (
+        <button
+          type="button"
+          onClick={onUseCurrentLocation}
+          aria-label="Use current location"
+          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-primary hover:bg-muted"
+        >
+          <Crosshair className="h-4 w-4" />
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -239,6 +265,7 @@ export default function RouteSafety() {
               setEditingField(null);
             }}
             onUseCurrentLocation={handleUseCurrentLocation(setOrigin)}
+            showQuickLocationButton
           />
           {editingField !== "origin" && <div className="ml-[5px] h-3 w-px border-l border-dashed border-border" />}
           <LocationRow
