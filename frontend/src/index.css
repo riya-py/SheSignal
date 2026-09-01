@@ -38,6 +38,9 @@
 }
 
 .dark {
+  .dark .maplibregl-map {
+  background-color: #0b0b0b;
+  }
   /* Dark mode — deep purple/near-black, brighter purple, pink accent */
   --background: 260 38% 7%;
   --foreground: 260 25% 96%;
@@ -69,6 +72,7 @@
   --risk-low-bg: 142 40% 16%;
 
   --shadow-color: 260 60% 2%;
+  
 }
 
 * {
