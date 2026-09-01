@@ -45,7 +45,9 @@ export default function Login() {
         </span>
         <h1 className="text-h2">Welcome back</h1>
         <p className="text-sm text-muted-foreground">
-          Sign in to submit reports — your reports stay anonymous either way.
+          Sign in to submit reports
+          <br />
+          your reports stay anonymous either way.
         </p>
       </div>
 
