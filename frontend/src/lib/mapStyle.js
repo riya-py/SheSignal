@@ -27,7 +27,18 @@ export function getMapStyle(theme) {
         id: "basemap",
         type: "raster",
         source: "basemap",
-        paint: theme === "dark" ? { "raster-brightness-min": 0, "raster-brightness-max": 0.55, "raster-hue-rotate": 180, "raster-saturation": -0.3 } : {},
+        // Neutral dark map: fully desaturated (no hue-rotate, so no purple/
+        // color-inverted tint) then darkened via brightness so it reads as a
+        // true grayscale dark basemap instead of a recolored one.
+        paint:
+          theme === "dark"
+            ? {
+                "raster-saturation": -1,
+                "raster-brightness-min": 0,
+                "raster-brightness-max": 0.5,
+                "raster-contrast": 0.1,
+              }
+            : {},
       },
     ],
     glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",

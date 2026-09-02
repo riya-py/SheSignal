@@ -41,12 +41,13 @@
   .dark .maplibregl-map {
   background-color: #0b0b0b;
   }
-  /* Dark mode — deep purple/near-black, brighter purple, pink accent */
-  --background: 260 38% 7%;
-  --foreground: 260 25% 96%;
+  /* Dark mode — neutral near-black (#0b0b0b family), purple/pink kept only
+     for primary/accent brand actions so buttons and links still pop. */
+  --background: 0 0% 4%;
+  --foreground: 0 0% 96%;
 
-  --card: 260 30% 12%;
-  --card-foreground: 260 25% 96%;
+  --card: 0 0% 7%;
+  --card-foreground: 0 0% 96%;
 
   --primary: 263 88% 72%;
   --primary-foreground: 262 40% 12%;
@@ -54,24 +55,24 @@
   --accent: 330 85% 68%;
   --accent-foreground: 262 40% 12%;
 
-  --muted: 260 22% 17%;
-  --muted-foreground: 260 15% 68%;
+  --muted: 0 0% 12%;
+  --muted-foreground: 0 0% 65%;
 
-  --border: 260 22% 22%;
-  --input: 260 22% 22%;
+  --border: 0 0% 17%;
+  --input: 0 0% 17%;
   --ring: 263 88% 72%;
 
   --destructive: 350 80% 62%;
   --destructive-foreground: 0 0% 100%;
 
   --risk-high: 350 88% 66%;
-  --risk-high-bg: 350 55% 20%;
+  --risk-high-bg: 350 45% 16%;
   --risk-moderate: 38 92% 60%;
-  --risk-moderate-bg: 38 50% 18%;
+  --risk-moderate-bg: 38 40% 15%;
   --risk-low: 142 55% 52%;
-  --risk-low-bg: 142 40% 16%;
+  --risk-low-bg: 142 35% 14%;
 
-  --shadow-color: 260 60% 2%;
+  --shadow-color: 0 0% 0%;
   
 }
 
