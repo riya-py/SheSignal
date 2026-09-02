@@ -1,112 +1,311 @@
-<div align="center">
+# SheSignal
 
-# 🛡️ SheSignal
+Crowdsourced street-safety intelligence — anonymous incident reports turned
+into a **transparent, tunable risk score**, live pattern clusters on a map,
+and a route planner that scores a walk turn-by-turn instead of handing back
+one number for an entire city.
 
-**Crowdsourced safety intelligence for the streets you actually walk.**
+The goal isn't a black-box "safety score." It's a system you can actually
+audit: every report that comes in, every pattern it forms, every weight in
+the risk formula, and every reason a route segment is flagged — all
+inspectable, all in config, none of it hidden behind a model you can't
+question.
 
-Report incidents anonymously, see live risk heatmaps, get an AI-scored safety read on any street route before you take it — all built on a transparent, tunable risk engine instead of a black box.
+```mermaid
+flowchart LR
+    A["Report form"] -->|insert, 201 immediately| B["Supabase / PostGIS"]
+    B -.->|async, non-blocking| C["AI extraction"]
+    C -->|severity + factors| D["report_analysis"]
+    B -->|geohash + time bucket| E["Pattern clustering"]
+    D --> E
+    E -->|density · severity · recency · diversity| F["Risk engine"]
+    F --> G["Live map / Risk lookup / Route scoring"]
+```
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-[![FastAPI](https://img.shields.io/badge/backend-FastAPI-009688)](./backend)
-[![React](https://img.shields.io/badge/frontend-React%2018%20%2B%20Vite-61DAFB)](./frontend)
-[![Supabase](https://img.shields.io/badge/data-Supabase%20%2F%20PostGIS-3ECF8E)](./backend/supabase_db)
-[![Tests](https://img.shields.io/badge/backend%20tests-16%20suites-brightgreen)](./backend/tests)
+---
 
-</div>
+## Table of contents
+
+- [The problem](#the-problem)
+- [How it works](#how-it-works)
+  1. [Anonymous reports, immediately saved](#1-anonymous-reports-immediately-saved)
+  2. [AI enrichment, never on the critical path](#2-ai-enrichment-never-on-the-critical-path)
+  3. [Pattern clustering: geohash + time bucket](#3-pattern-clustering-geohash--time-bucket)
+  4. [The risk engine: four explainable signals](#4-the-risk-engine-four-explainable-signals)
+  5. [Route safety: segmenting a walk](#5-route-safety-segmenting-a-walk)
+  6. [Recommendations](#6-recommendations)
+  7. [Auth and Row-Level Security](#7-auth-and-row-level-security)
+  8. [Rate limiting](#8-rate-limiting)
+  9. [Caching](#9-caching)
+- [Project architecture](#project-architecture)
+- [Running it locally](#running-it-locally)
+- [API surface](#api-surface)
+- [Running the tests](#running-the-tests)
+- [Limitations](#limitations)
+- [Future improvements](#future-improvements)
 
 ---
 
 ## The problem
 
-Personal-safety apps usually do one of two things badly: they either broadcast raw, unmoderated crime data with no context, or they hide behind a vague "safety score" nobody can inspect. Meanwhile the people who most need street-level, *recent*, *hyperlocal* safety signal — women walking alone, late-shift commuters, students on unfamiliar campuses — are left guessing.
+Personal-safety apps tend to fail in one of two directions: they dump raw,
+unmoderated crime data on you with no context, or they hide behind a vague
+"safety score" nobody can inspect. The people who most need street-level,
+*recent*, *hyperlocal* signal — women walking alone, late-shift commuters,
+students on an unfamiliar campus — are left guessing either way.
 
-**SheSignal** turns anonymous, community-submitted reports into an explainable risk score, live pattern clusters on a map, and a route planner that tells you *which turn* is the risky one — not just a single number for an entire city.
-
----
-
-## What it does
-
-| | |
-|---|---|
-| 🗺️ **Live safety map** | Every report and detected hotspot rendered on an interactive MapLibre map, color-coded by risk level. |
-| 📝 **Anonymous incident reports** | Submit harassment, stalking, poor lighting, unsafe transit, and more in a few taps — reporter identity is never exposed, even to other endpoints. |
-| 🤖 **AI report enrichment** | Every report is passed through an LLM (any OpenAI-compatible endpoint — Gemini, Groq, OpenAI, OpenRouter) to extract severity, time-of-day context, and contributing factors — asynchronously, and *never* blocking the report submission itself. |
-| 📈 **Deterministic, explainable risk engine** | A transparent 4-factor score (density, severity, recency, diversity) — not an opaque ML score. Every weight lives in config, not code. |
-| 🧭 **Route safety scoring** | Paste a start/destination, get the walking route broken into risk-scored segments so you can see exactly where the danger is concentrated, powered by OpenRouteService. |
-| 🔍 **Pattern detection** | Reports are geo-clustered (geohash-based) into recurring "patterns" so isolated one-offs don't skew the map — a hotspot only appears once it's a *pattern*. |
-| 💡 **Personalized recommendations** | Context-aware safety tips generated from the nearby pattern factors, not generic advice. |
-| 🔐 **Privacy & abuse-resistant by design** | Supabase RLS policies, per-user + per-IP rate limiting on every write path, and reports that 404 (not 403) when you try to probe someone else's data. |
+SheSignal turns anonymous, community-submitted reports into a score you can
+trace back to its inputs, hotspots that only surface once they're an actual
+*pattern* (not a one-off), and a route planner that shows you which turn is
+the risky one.
 
 ---
 
-## How the risk score actually works
+## How it works
 
-No black box. The score is a weighted blend of four signals, each independently testable (see [`backend/tests/test_risk_engine.py`](./backend/tests/test_risk_engine.py)):
+### 1. Anonymous reports, immediately saved
+
+A report (`POST /reports`) is a category, description, coordinates, and an
+optional occurred-at time. It's written straight to Supabase and the
+endpoint returns **`201` immediately** — nothing downstream (AI enrichment,
+clustering) is allowed to block or fail the report itself.
+
+Reporter identity is captured (`reporter_id`) for rate limiting and
+ownership checks, but it is **never returned by any endpoint** — not the
+public feed, not the analysis endpoints. Fetching a report analysis you
+don't own returns `404`, not `403`, so a caller can't even confirm someone
+else's report exists.
+
+### 2. AI enrichment, never on the critical path
+
+After the `201` is already committed, the report description is passed to
+an LLM behind any OpenAI-compatible `/chat/completions` endpoint (Gemini's
+compat layer, Groq, OpenAI, OpenRouter — swap providers with an env var, no
+code change). The model extracts:
+
+- a refined **category**
+- a **severity** (low / medium / high)
+- **time-of-day context**
+- a list of **contributing factors** (poor lighting, stalking, unsafe
+  transit, etc.)
+
+The raw response is validated against a Pydantic schema before anything is
+trusted. If the AI call fails, times out, or the response fails validation,
+the report is marked `failed` in `report_analysis` and nothing else
+happens — the report the user submitted is already safe on disk regardless.
+Owners can manually retry a failed analysis via
+`POST /reports/{id}/reanalyze`, which is blocked with `409` if an analysis
+already completed, so it can't silently re-run twice.
+
+### 3. Pattern clustering: geohash + time bucket
+
+Individual reports don't drive the map — **patterns** do. A Postgres
+function, `recompute_patterns()`, buckets reports by:
+
+- **geohash** (precision configurable, default 7 — roughly a
+  150m × 150m cell), and
+- **time-of-day bucket** (morning / afternoon / evening / night)
+
+then groups reports that fall in the same cell *and* the same time bucket,
+within a configurable lookback window (default 90 days). A cluster only
+becomes a visible pattern once it clears a minimum report count (default
+3) — so a single anonymous report can't spike the map, but a real recurring
+pattern will. Each pattern stores a centroid, a report count, a
+severity breakdown, and a factor breakdown, ready for the risk engine to
+consume directly. Recomputation is throttled server-side (default every 5
+minutes) rather than running per-request.
+
+### 4. The risk engine: four explainable signals
+
+No black box — the score for any lat/lng is a weighted blend of four
+independently-testable signals (see
+[`backend/tests/test_risk_engine.py`](./backend/tests/test_risk_engine.py)):
 
 ```
 risk = (density × 0.35) + (severity × 0.35) + (recency × 0.20) + (diversity × 0.10)
 ```
 
-- **Density** — report volume near the point, saturating at a configurable threshold so one hotspot can't max out the scale forever.
-- **Severity** — weighted by AI-classified severity (low/medium/high) across nearby patterns.
-- **Recency** — exponential half-life decay (default 30 days), so a cluster of reports from a year ago fades relative to activity from last week.
-- **Diversity** — how many *distinct* contributing factors are present (poor lighting + stalking + no security presence is scarier than three reports of the same thing).
+- **Density** — nearby report volume, saturating at a configurable
+  threshold (default 20 reports) so one extreme hotspot can't max out the
+  scale for the whole map.
+- **Severity** — patterns' AI-classified severity breakdown, weighted
+  low/medium/high, normalized to 0–100.
+- **Recency** — exponential half-life decay (default 30 days) applied to
+  the most recent report in range, so last year's cluster fades relative to
+  last week's activity.
+- **Diversity** — how many *distinct* contributing factors show up nearby;
+  three different problems (lighting + stalking + no security) reads as
+  riskier than three reports of the exact same thing.
 
-Every weight, saturation point, half-life, and radius is a config value — nothing is hardcoded — so the model can be re-tuned without touching engine code.
+Every weight, saturation point, half-life, and radius lives in
+`backend/app/config.py` as an environment-overridable setting — nothing is
+hardcoded into the scoring logic. The final score is bucketed into
+`low` / `moderate` / `high` against configurable thresholds, and the
+response includes the top contributing factors and a human-readable
+explanation generated from the same numbers the score was built from — not
+a separate free-text model call.
+
+### 5. Route safety: segmenting a walk
+
+`POST /route-risk` takes a start and destination, fetches a walking route
+from any OpenRouteService-compatible directions API, then:
+
+1. **Segments the polyline** (`routing/segmentation.py`) into a target
+   number of roughly-equal-length pieces using cumulative haversine
+   distance — not equal *point* counts, since GPS points cluster unevenly
+   along a real route.
+2. Runs the **same risk engine** from section 4 against each segment's
+   midpoint, at a smaller radius tuned for street-level granularity.
+3. **Combines segment scores** (`routing/risk.py`) into one overall route
+   score as a weighted blend of the *average* segment score and the *worst*
+   segment score — so a route that's fine except for one bad block still
+   reads as risky overall, not diluted away by the safe stretches around it.
+
+The response includes both the overall score and the full per-segment
+breakdown, so the frontend can render exactly which stretch of the walk is
+driving the number up.
+
+### 6. Recommendations
+
+`GET /recommendations` takes the same nearby-pattern data the risk engine
+uses and maps the dominant contributing factors to template-based safety
+tips (`recommendations/templates.py`) — context-aware because they're
+driven by what's actually been reported nearby, not a generic static list.
+
+### 7. Auth and Row-Level Security
+
+Auth tokens are Supabase-issued JWTs, verified server-side against
+Supabase's own JWKS endpoint (`dependencies.py`) — the backend never trusts
+a token without checking it against Supabase's published signing keys, and
+caches the JWKS client rather than re-fetching it per request.
+
+Every table is additionally locked down with Postgres **Row-Level Security**
+policies, verified by a dedicated
+[`rls_tests.sql`](./backend/supabase_db/rls_tests.sql) suite — so even a
+bug in the API layer doesn't expose another user's data at the database
+level.
+
+### 8. Rate limiting
+
+A small in-memory sliding-window limiter (`rate_limit.py`) gates every
+write and every expensive read, with independent, configurable per-minute
+limits for reports, AI analysis, risk lookups, route scoring, and the
+public feed. Report and AI limits are keyed **per authenticated user**, not
+per IP, so switching networks doesn't get around them; the public feed is
+keyed per IP to blunt scraping.
+
+### 9. Caching
+
+Risk (`risk/cache.py`) and route-provider (`routing/cache.py`) responses
+are cached with a short, configurable TTL, keyed on coordinates rounded to
+a configurable precision — so nearby, near-simultaneous lookups (e.g. a
+route with many overlapping segment queries) don't each trigger a fresh
+database scan or a fresh call to the routing provider.
 
 ---
 
-## Architecture
+## Project architecture
+
+```mermaid
+flowchart TD
+    subgraph Frontend["React + Vite SPA (frontend/)"]
+        UI["MapLibre map · Dashboard · Report form · Route safety"]
+    end
+
+    subgraph Backend["FastAPI backend (backend/app/)"]
+        API["Routers: reports · risk · patterns · route_risk · recommendations"]
+        AUTH["Supabase JWT verification"]
+        RL["Rate limiter"]
+        AI["AI extraction client"]
+        RISK["Risk engine"]
+        ROUTE["Routing / segmentation"]
+        REC["Recommendation engine"]
+    end
+
+    DB["Supabase Postgres + PostGIS + RLS"]
+    LLM["Any OpenAI-compatible chat endpoint"]
+    ORS["Any OpenRouteService-compatible directions API"]
+
+    UI <-->|HTTPS| API
+    API --> AUTH
+    API --> RL
+    API --> RISK
+    API --> ROUTE
+    API --> REC
+    RISK --> DB
+    ROUTE --> ORS
+    ROUTE --> RISK
+    AI --> LLM
+    API -.->|async, non-blocking| AI
+    AI --> DB
+```
 
 ```
-┌─────────────────────┐         ┌──────────────────────────────┐        ┌─────────────────────┐
-│   React + Vite SPA  │  HTTPS  │        FastAPI backend        │  SQL   │   Supabase/Postgres │
-│  MapLibre · Tailwind│ ──────► │  rate limiting · auth · risk  │ ─────► │  + PostGIS · RLS     │
-│  shadcn/ui · React  │ ◄────── │  engine · pattern clustering  │ ◄───── │  policies             │
-│  Query · Zod         │         └───────────┬────────────────┘        └─────────────────────┘
-└─────────────────────┘                     │
-                                             ▼
-                              ┌────────────────────────────┐      ┌───────────────────────────┐
-                              │  AI extraction (any OpenAI- │      │  Route provider (any ORS-  │
-                              │  compatible chat endpoint)  │      │  compatible directions API)│
-                              └────────────────────────────┘      └───────────────────────────┘
+SheSignal/
+├── backend/
+│   ├── app/
+│   │   ├── main.py               # FastAPI app entry point
+│   │   ├── config.py             # every tunable weight/threshold/limit
+│   │   ├── database.py           # Supabase queries
+│   │   ├── dependencies.py       # JWT verification against Supabase JWKS
+│   │   ├── rate_limit.py         # in-memory sliding-window limiter
+│   │   ├── ai/                   # LLM client, schemas, extraction service
+│   │   ├── risk/                 # risk engine, service, cache
+│   │   ├── patterns/             # geohash/time-bucket clustering trigger
+│   │   ├── routing/              # ORS client, segmentation, route risk
+│   │   ├── recommendations/      # factor → tip templates
+│   │   ├── models/                # Pydantic request/response schemas
+│   │   └── routers/              # reports, risk, patterns, route_risk, recommendations, health
+│   ├── supabase_db/
+│   │   ├── migrations/           # schema, report_analysis, patterns, RLS support
+│   │   └── rls_tests.sql          # verifies Row-Level Security policies
+│   └── tests/                     # one suite per concern (AI, auth, risk, routing, rate limit...)
+└── frontend/
+    └── src/
+        ├── pages/                # Home, Dashboard, Report, RouteSafety, ZoneDetails, Login/Signup
+        ├── components/           # map, route, ui (shadcn/ui + Radix)
+        ├── hooks/                # TanStack Query hooks per endpoint
+        ├── contexts/             # Auth, Theme
+        └── lib/                  # Supabase client, schemas (Zod), risk copy, geocoding
 ```
 
-**Flow for a new report:** `Report form → Supabase insert (201 immediately) → async AI extraction → validated JSON → report_analysis table → feeds pattern clustering → feeds risk & recommendation engines`. A failing or rate-limited AI call never blocks or rolls back the report itself.
+Every arrow is a real interface, not just a folder boundary: the risk
+engine never talks to Supabase directly (that's `database.py`'s job), the
+route service reuses the exact same risk engine the `/risk` endpoint uses
+rather than a parallel implementation, and AI enrichment is wired in as a
+best-effort side effect of report creation — never a dependency the report
+endpoint waits on.
 
 ---
 
-## Tech stack
-
-**Frontend** — React 18, Vite, Tailwind CSS, shadcn/ui + Radix primitives, MapLibre GL / react-map-gl, TanStack Query, React Hook Form + Zod, Framer Motion, Supabase JS client.
-
-**Backend** — FastAPI, Pydantic Settings, Supabase (Postgres + PostGIS + RLS), a pluggable AI client (any OpenAI-compatible `/chat/completions` endpoint), a pluggable routing provider (any OpenRouteService-compatible directions API), in-memory sliding-window rate limiting.
-
----
-
-## Getting started
+## Running it locally
 
 ### Prerequisites
+
 - Node 18+ and Python 3.11+
 - A free [Supabase](https://supabase.com) project (Postgres + PostGIS + Auth)
-- A free API key from any OpenAI-compatible LLM provider (Gemini's OpenAI-compat layer works out of the box and is free)
-- A free [OpenRouteService](https://openrouteservice.org) API key for route safety scoring
+- A free API key from any OpenAI-compatible LLM provider (Gemini's
+  OpenAI-compat layer works out of the box and is free)
+- A free [OpenRouteService](https://openrouteservice.org) API key for route
+  safety scoring
 
 ### 1. Database
 
-Run the migrations in `backend/supabase_db/migrations/` against your Supabase project in order (`0001` → `0004`). `rls_tests.sql` verifies your Row-Level Security policies are locked down correctly.
+Run the migrations in `backend/supabase_db/migrations/` against your
+Supabase project in order (`0001` → `0005`). `rls_tests.sql` verifies your
+Row-Level Security policies are locked down correctly before you go further.
 
 ### 2. Backend
 
 ```bash
 cd backend
-python -m venv venv && source venv/bin/activate      # or venv\Scripts\activate on Windows
+python -m venv venv && source venv/bin/activate      # venv\Scripts\activate on Windows
 pip install -r requirements.txt
 cp .env.example .env    # fill in SUPABASE_*, AI_API_KEY, ROUTE_PROVIDER_API_KEY
 uvicorn app.main:app --reload
 ```
 
-API docs available at `http://localhost:8000/docs`.
+API docs are available at `http://localhost:8000/docs`.
 
 ### 3. Frontend
 
@@ -118,8 +317,6 @@ npm run dev
 ```
 
 App runs at `http://localhost:5173`.
-
-```
 
 ---
 
@@ -141,21 +338,46 @@ Full interactive schema at `/docs` once the backend is running.
 
 ---
 
-## Security & privacy choices worth calling out
+## Running the tests
 
-- **Reporter identity is never returned** by any endpoint — not `/reports`, not the analysis endpoints. Confirmed in the router docstring and enforced in the response models.
-- **404, not 403**, when you try to fetch a report analysis you don't own — avoids confirming another user's report even exists.
-- **Rate limiting is per-authenticated-user on write paths**, not per-IP, so it can't be bypassed by switching networks — and per-IP on public read paths to blunt scraping.
-- **AI failures degrade gracefully.** A report is saved and returns `201` regardless of whether the AI enrichment pipeline succeeds, fails, or is rate-limited.
-- **Supabase Row-Level Security** locks down every table, verified by a dedicated `rls_tests.sql` suite.
+```bash
+cd backend
+pip install -r requirements.txt
+pytest                              # everything
+pytest -v tests/test_risk_engine.py  # one concern at a time
+```
+
+Tests are organized one file per concern — AI client/service, auth, health,
+patterns, rate limiting, recommendations (engine + endpoint), reports, risk
+(engine + endpoint), routing (provider, segmentation, route-risk
+combination, route-risk endpoint, alternative routes). Provider and AI
+tests use mocks — the suite never depends on a real Supabase project, a
+real LLM key, or a real routing provider.
 
 ---
 
-## Roadmap ideas
+## Limitations
+
+- **In-memory rate limiting.** Limits reset on restart and aren't shared
+  across multiple backend instances — fine for a single deployment, not for
+  a horizontally-scaled one.
+- **No push notifications.** New patterns near a saved location don't
+  proactively alert anyone yet.
+- **Single routing provider per deployment.** The route safety feature
+  depends on whichever OpenRouteService-compatible provider is configured;
+  there's no automatic fallback between providers.
+- **English-only AI extraction.** Report descriptions are analyzed in
+  whatever language the model receives them in, but prompts/schemas aren't
+  currently localized.
+- **No offline mode.** The frontend is a standard SPA, not a PWA — it
+  needs connectivity to load the map, reports, or risk data.
+
+## Future improvements
 
 - Push notifications when a new pattern emerges near a saved location
-- Community verification / corroboration for high-severity reports
+- Community verification/corroboration for high-severity reports
 - Multi-language report submission and AI extraction
+- Distributed rate limiting (Redis-backed) for multi-instance deployments
 - Offline-first PWA mode for low-connectivity areas
 
 ---
@@ -163,9 +385,3 @@ Full interactive schema at `/docs` once the backend is running.
 ## License
 
 MIT — see [LICENSE](./LICENSE).
-
-<div align="center">
-
-*Built with the belief that safety data should be transparent, explainable, and owned by the community it protects.*
-
-</div>
