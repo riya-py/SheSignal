@@ -29,15 +29,21 @@ class SegmentRisk(BaseModel):
 
 
 class RouteAlternative(BaseModel):
-    """A route distinct from the primary one, included only when it scores
-    a strictly lower overall_risk_score - i.e. it's an actual improvement,
-    not just a different path."""
+    """The best-scoring route provider found that's distinct from the
+    primary one. Included whenever a geometrically distinct alternate
+    exists, regardless of whether it actually scores better - `is_safer`
+    and `score_delta` tell the caller the truth so the UI never claims an
+    improvement that isn't real. score_delta is primary_score - alt_score,
+    so positive means the alternative is actually safer, zero means tied,
+    and negative means it's actually riskier than the primary route."""
 
     total_distance_meters: float
     total_duration_seconds: float
     overall_risk_score: int
     overall_risk_level: RiskLevel
     segments: List[SegmentRisk]
+    is_safer: bool
+    score_delta: int
 
 
 class RouteRiskResponse(BaseModel):
@@ -50,7 +56,9 @@ class RouteRiskResponse(BaseModel):
     explanation: str
     segments: List[SegmentRisk]
     computed_at: datetime
-    # None when no alternative was found, none scored better than the
-    # primary route, or the alternative lookup failed - all "nothing safer
-    # to offer right now", not an error.
+    # None when no geometrically distinct alternate route could be found or
+    # the alternative lookup failed - not an error, just nothing else to
+    # offer. When present, check alternative.is_safer before calling it
+    # "safer" - a present alternative is not a guarantee it beats the
+    # primary route's score.
     alternative: Optional[RouteAlternative] = None

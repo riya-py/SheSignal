@@ -73,9 +73,16 @@ def _score_route(coordinates, distance_meters: float, settings: Settings, now):
 def _find_safer_alternative(
     origin: Coordinate, destination: Coordinate, primary_score: int, settings: Settings, now
 ) -> RouteAlternative | None:
-    """Best-effort: fetches alternate routes and returns the lowest-risk one,
-    but only if it actually scores better than the primary route. Never
-    raises - any failure here just means no alternative is offered."""
+    """Best-effort: fetches alternate routes and returns the lowest-risk one
+    found, whatever its score. Previously this returned None unless the
+    alternate scored strictly lower than the primary route, which meant a
+    perfectly reasonable second path was hidden any time it tied or lost.
+    Now we always surface the best alternate we found (if any exists and
+    is geometrically distinct) and let the response's `is_safer` /
+    `score_delta` fields tell the caller honestly whether it actually beats
+    the primary route - callers must not claim "safer" for a tie or a
+    higher score, only display it accurately. Never raises - any failure
+    here just means no alternative is offered."""
     try:
         alt_routes = route_provider.get_alternative_routes(
             (origin.latitude, origin.longitude),
@@ -99,7 +106,7 @@ def _find_safer_alternative(
         if best is None or alt_score < best[1]:
             best = (alt, alt_score, alt_level, alt_segments)
 
-    if best is None or best[1] >= primary_score:
+    if best is None:
         return None
 
     alt, alt_score, alt_level, alt_segments = best
@@ -109,6 +116,8 @@ def _find_safer_alternative(
         overall_risk_score=alt_score,
         overall_risk_level=alt_level,
         segments=alt_segments,
+        is_safer=alt_score < primary_score,
+        score_delta=primary_score - alt_score,
     )
 
 
