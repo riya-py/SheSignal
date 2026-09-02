@@ -338,24 +338,6 @@ Full interactive schema at `/docs` once the backend is running.
 
 ---
 
-## Running the tests
-
-```bash
-cd backend
-pip install -r requirements.txt
-pytest                              # everything
-pytest -v tests/test_risk_engine.py  # one concern at a time
-```
-
-Tests are organized one file per concern — AI client/service, auth, health,
-patterns, rate limiting, recommendations (engine + endpoint), reports, risk
-(engine + endpoint), routing (provider, segmentation, route-risk
-combination, route-risk endpoint, alternative routes). Provider and AI
-tests use mocks — the suite never depends on a real Supabase project, a
-real LLM key, or a real routing provider.
-
----
-
 ## Limitations
 
 - **In-memory rate limiting.** Limits reset on restart and aren't shared
