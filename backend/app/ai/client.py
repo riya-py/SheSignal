@@ -15,7 +15,7 @@ SYSTEM_PROMPT = (
     "report, extract structured data. Respond with ONLY a JSON object, no "
     "prose, no markdown fences, matching exactly this shape:\n"
     '{"category": one of '
-    "[harassment, poor_lighting, stalking, isolated_area, unsafe_transit, "
+    "[harassment, poor_lighting, lack_of_security, isolated_area, unsafe_transit, "
     "suspicious_activity, other], "
     '"severity": one of [low, medium, high], '
     '"time_context": one of [morning, afternoon, evening, night, unknown], '
@@ -51,7 +51,7 @@ class AIClient:
         body = {
             "model": self._model,
             "temperature": 0,
-            "max_tokens": 300,
+            "max_completion_tokens": 300,
             "response_format": {"type": "json_object"},
             "messages": [
                 {"role": "system", "content": SYSTEM_PROMPT},
@@ -87,9 +87,15 @@ class AIClient:
                 continue
 
             if resp.status_code >= 400:
-                # Non-retryable: bad key, bad request, etc.
-                logger.error("AI provider rejected request: status=%s", resp.status_code)
-                raise AIError(f"provider returned {resp.status_code}")
+                # Non-retryable: bad key, bad request, content policy, etc.
+                # Body is logged (truncated) since that's where the actual
+                # reason lives - "status=400" alone isn't actionable.
+                logger.error(
+                    "AI provider rejected request: status=%s body=%s",
+                    resp.status_code,
+                    resp.text[:500],
+                )
+                raise AIError(f"provider returned {resp.status_code}: {resp.text[:200]}")
 
             return self._parse_content(resp)
 
