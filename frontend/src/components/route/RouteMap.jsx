@@ -6,6 +6,8 @@ import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/contexts/ThemeContext";
 import { getMapStyle } from "@/lib/mapStyle";
 import { RISK_LEVEL_COPY } from "@/lib/riskCopy";
+import RiskHeatmap from "@/components/map/RiskHeatmap";
+import SafetyMarker from "@/components/map/SafetyMarker";
 
 const RISK_COLOR = { high: "#f43f5e", moderate: "#f59e0b", low: "#22c55e" };
 
@@ -27,7 +29,18 @@ function toGeoJSON(segments) {
 }
 
 // origin/destination: {latitude, longitude}. segments: RouteRiskResponse.segments.
-export default function RouteMap({ origin, destination, segments, className = "" }) {
+// reports/zones: same shapes SafetyMap takes on the Home map - passed in so the
+// route view can show the same "reported concerns" markers/clusters, and left
+// empty by the caller once a safer alternative is being shown.
+export default function RouteMap({
+  origin,
+  destination,
+  segments,
+  reports = [],
+  zones = [],
+  onMarkerClick,
+  className = "",
+}) {
   const { theme } = useTheme();
   const navigate = useNavigate();
   const mapRef = useRef(null);
@@ -59,6 +72,19 @@ export default function RouteMap({ origin, destination, segments, className = ""
         attributionControl={{ compact: true }}
       >
         <NavigationControl position="bottom-right" showCompass={false} />
+
+        <RiskHeatmap zones={zones} />
+
+        {reports.map((r) => (
+          <SafetyMarker
+            key={r.id}
+            longitude={r.longitude}
+            latitude={r.latitude}
+            category={r.category}
+            onClick={() => onMarkerClick?.(r)}
+          />
+        ))}
+
         <Source id="route" type="geojson" data={data}>
           <Layer
             id="route-casing"

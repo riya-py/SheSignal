@@ -1,8 +1,9 @@
 import { toast } from "sonner";
+import { format } from "date-fns";
 import { ShieldCheck, MapPin, Clock3, FileText } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { reportCategories, timingOptions } from "@/lib/reportSchema";
+import { reportCategories, timingOptions, timeOfDayOptions } from "@/lib/reportSchema";
 import { useCreateReport } from "@/hooks/useCreateReport";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -24,6 +25,15 @@ export default function ReviewStep({ data, onBack, onSubmitted }) {
 
   const category = reportCategories.find((c) => c.value === data.details?.category);
   const timing = timingOptions.find((t) => t.value === data.details?.timing);
+  const timeOfDay = timeOfDayOptions.find((t) => t.value === data.details?.otherTimeOfDay);
+
+  const timingLabel =
+    data.details?.timing === "other" && data.details?.otherDate
+      ? `${format(new Date(`${data.details.otherDate}T00:00:00`), "MMM d")}${
+          timeOfDay ? `, ${timeOfDay.label}` : ""
+        }`
+      : timing?.label ?? "Not set";
+
   const locationLabel = data.location?.label
     ? data.location.label
     : data.location?.mode === "current"
@@ -35,10 +45,18 @@ export default function ReviewStep({ data, onBack, onSubmitted }) {
   const handleSubmit = () => {
     if (!data.details?.category || !data.location?.coords) return;
 
-    // Only "just now" maps to a real timestamp — "earlier today"/"other" don't
-    // collect a precise time in this UI, so we don't fabricate one; the
-    // backend defaults occurred_at to submission time when it's omitted.
-    const occurredAt = data.details.timing === "just_now" ? new Date().toISOString() : undefined;
+    // "just now" maps straight to the current timestamp. "other" maps to the
+    // picked calendar date at a representative hour for the chosen time of
+    // day (see timeOfDayOptions). "earlier today" still doesn't collect a
+    // precise time, so it's left undefined - the backend defaults occurred_at
+    // to submission time when it's omitted.
+    let occurredAt;
+    if (data.details.timing === "just_now") {
+      occurredAt = new Date().toISOString();
+    } else if (data.details.timing === "other" && data.details.otherDate) {
+      const hour = timeOfDay?.hour ?? 12;
+      occurredAt = new Date(`${data.details.otherDate}T${String(hour).padStart(2, "0")}:00:00`).toISOString();
+    }
 
     createReport(
       {
@@ -67,7 +85,7 @@ export default function ReviewStep({ data, onBack, onSubmitted }) {
       <Card className="divide-y divide-border p-2">
         <Row icon={category?.icon ?? FileText} label="Issue" value={category?.label ?? "Not set"} />
         <Row icon={MapPin} label="Location" value={locationLabel} />
-        <Row icon={Clock3} label="Time" value={timing?.label ?? "Not set"} />
+        <Row icon={Clock3} label="Time" value={timingLabel} />
         <Row icon={FileText} label="Description" value={data.details?.description || "Not set"} />
       </Card>
 
