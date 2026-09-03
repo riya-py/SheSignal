@@ -4,11 +4,10 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { useTheme } from "@/contexts/ThemeContext";
 import { getMapStyle } from "@/lib/mapStyle";
 import RiskHeatmap from "@/components/map/RiskHeatmap";
-import SafetyMarker from "@/components/map/SafetyMarker";
 import { DEFAULT_CENTER } from "@/data/mockReports";
 
 const SafetyMap = forwardRef(function SafetyMap(
-  { zones, reports, onMarkerClick, className = "" },
+  { zones, className = "" },
   ref
 ) {
   const { theme } = useTheme();
@@ -36,16 +35,6 @@ const SafetyMap = forwardRef(function SafetyMap(
         <NavigationControl position="bottom-right" showCompass={false} />
 
         <RiskHeatmap zones={zones} />
-
-        {reports.map((r) => (
-          <SafetyMarker
-            key={r.id}
-            longitude={r.longitude}
-            latitude={r.latitude}
-            category={r.category}
-            onClick={() => onMarkerClick?.(r)}
-          />
-        ))}
 
         {userLocation && (
           <Marker longitude={userLocation.longitude} latitude={userLocation.latitude} anchor="center">

@@ -98,4 +98,3 @@ create policy "reports_select_own" on public.reports
 -- service-role key only.
 
 -- Public/anon access goes through the view, not the base table.
-grant select on public.public_reports to anon, authenticated;

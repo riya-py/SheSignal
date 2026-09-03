@@ -12,10 +12,10 @@ set role anon;
 select * from public.reports;               -- expected: 0 rows (no SELECT policy for anon)
 reset role;
 
--- 2. anon CAN read the sanitized public view, and reporter_id is absent
---    from the result set entirely (not just null).
+-- 2. anon cannot read the raw public_reports view.
+--    Public map access uses aggregated patterns instead.
 set role anon;
-select * from public.public_reports limit 5; -- expected: rows, no reporter_id column
+select * from public.public_reports limit 5; -- expected: permission denied
 reset role;
 
 -- 3. an authenticated user can only insert a report with their own id as

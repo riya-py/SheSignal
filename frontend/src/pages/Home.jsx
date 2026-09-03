@@ -5,21 +5,13 @@ import SafetyMap from "@/components/map/SafetyMap";
 import MapLegend from "@/components/map/MapLegend";
 import LocationButton from "@/components/map/LocationButton";
 import DestinationSearch from "@/components/map/DestinationSearch";
-import { useReports, usePatterns, riskFromReportCount } from "@/hooks/useReports";
+import { usePatterns, riskFromReportCount } from "@/hooks/useReports";
 
 export default function Home() {
   const mapRef = useRef(null);
   const navigate = useNavigate();
 
-  const { data: reportsData } = useReports({ limit: 50 });
   const { data: patternsData } = usePatterns({ limit: 50 });
-
-  const reportMarkers = (reportsData?.items ?? []).map((r) => ({
-    id: r.id,
-    longitude: r.longitude,
-    latitude: r.latitude,
-    category: r.category,
-  }));
 
   const riskZones = (patternsData?.items ?? []).map((p) => ({
     id: p.id,
@@ -32,12 +24,7 @@ export default function Home() {
   return (
     // 100dvh minus the sticky navbar height (h-[65px] on mobile / h-[73px] desktop match Navbar padding)
     <div className="relative h-[calc(100dvh-65px)] w-full overflow-hidden md:h-[calc(100dvh-73px)]">
-      <SafetyMap
-        ref={mapRef}
-        zones={riskZones}
-        reports={reportMarkers}
-        onMarkerClick={(r) => navigate("/zone-details", { state: { latitude: r.latitude, longitude: r.longitude } })}
-      />
+      <SafetyMap ref={mapRef} zones={riskZones} />
 
       <MapLegend />
 

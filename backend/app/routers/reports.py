@@ -1,19 +1,18 @@
 """
 POST /reports  -> authenticated, rate-limited per user, writes a report
-GET  /reports  -> public, rate-limited per IP, reads sanitized/paginated reports
-
-Neither endpoint ever returns reporter_id — see app/models/report.py.
+Raw reports are never exposed through a list endpoint. Public map data comes
+from the aggregated /patterns endpoint instead.
 """
 import logging
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app import database
 from app.ai.service import process_report_analysis
 from app.config import get_settings
 from app.dependencies import CurrentUser, get_current_user
-from app.models.report import ReportCreate, ReportListResponse, ReportResponse
+from app.models.report import ReportCreate, ReportResponse
 from app.models.report_analysis import ReportAnalysisResponse
 from app.rate_limit import limiter
 
@@ -111,17 +110,3 @@ def reanalyze_report(
     if not analysis:
         return ReportAnalysisResponse(report_id=report_id, status="failed")
     return ReportAnalysisResponse(**analysis)
-
-
-@router.get("/reports", response_model=ReportListResponse)
-def list_reports(
-    request: Request,
-    limit: int = Query(default=20, ge=1, le=100),
-    offset: int = Query(default=0, ge=0),
-):
-    settings = get_settings()
-    client_ip = request.client.host if request.client else "unknown"
-    limiter.check(f"public_reports:{client_ip}", settings.RATE_LIMIT_PUBLIC_API)
-
-    rows = database.list_public_reports(limit=limit, offset=offset)
-    return ReportListResponse(items=rows, limit=limit, offset=offset)

@@ -21,7 +21,7 @@ import MapLegend from "@/components/map/MapLegend";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouteRisk } from "@/hooks/useRouteRisk";
-import { useReports, usePatterns, riskFromReportCount } from "@/hooks/useReports";
+import { usePatterns, riskFromReportCount } from "@/hooks/useReports";
 import { transportOptions } from "@/data/mockRoute";
 
 // Reverse-geocodes so "use current location" shows a readable label instead of raw coords.
@@ -172,19 +172,7 @@ export default function RouteSafety() {
     session?.access_token
   );
 
-  // Same "reported concerns" markers/clusters shown on the Home map - kept
-  // visible here too while browsing the default route, then hidden once a
-  // safer alternative is picked so it's clear you're now looking at the
-  // route the concerns already got routed around.
-  const { data: reportsData } = useReports({ limit: 50 });
   const { data: patternsData } = usePatterns({ limit: 50 });
-
-  const reportMarkers = (reportsData?.items ?? []).map((r) => ({
-    id: r.id,
-    longitude: r.longitude,
-    latitude: r.latitude,
-    category: r.category,
-  }));
 
   const riskZones = (patternsData?.items ?? []).map((p) => ({
     id: p.id,
@@ -381,11 +369,7 @@ export default function RouteSafety() {
                   ? routeRisk.alternative.segments
                   : routeRisk.segments
               }
-              reports={showingAlternative ? [] : reportMarkers}
               zones={showingAlternative ? [] : riskZones}
-              onMarkerClick={(r) =>
-                navigate("/zone-details", { state: { latitude: r.latitude, longitude: r.longitude } })
-              }
             />
 
             {!showingAlternative && <MapLegend />}

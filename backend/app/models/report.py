@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from typing import List, Literal, Optional
+from typing import Literal, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
@@ -51,12 +51,6 @@ class ReportResponse(BaseModel):
     occurred_at: datetime
     created_at: datetime
     status: str
-
-
-class ReportListResponse(BaseModel):
-    items: List[ReportResponse]
-    limit: int
-    offset: int
 
 
 class ReportFlagResponse(BaseModel):

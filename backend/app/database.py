@@ -6,7 +6,6 @@ from supabase import Client, create_client
 from app.config import get_settings
 
 REPORTS_TABLE = "reports"
-PUBLIC_REPORTS_VIEW = "public_reports"
 REPORT_ANALYSIS_TABLE = "report_analysis"
 PATTERNS_TABLE = "patterns"
 RECOMPUTE_PATTERNS_RPC = "recompute_patterns"
@@ -23,18 +22,6 @@ def insert_report(payload: Dict[str, Any]) -> Dict[str, Any]:
     client = get_service_client()
     result = client.table(REPORTS_TABLE).insert(payload).execute()
     return result.data[0]
-
-
-def list_public_reports(limit: int, offset: int) -> List[Dict[str, Any]]:
-    client = get_service_client()
-    result = (
-        client.table(PUBLIC_REPORTS_VIEW)
-        .select("*")
-        .order("created_at", desc=True)
-        .range(offset, offset + limit - 1)
-        .execute()
-    )
-    return result.data
 
 
 def get_report_by_id(report_id: str) -> Dict[str, Any] | None:
